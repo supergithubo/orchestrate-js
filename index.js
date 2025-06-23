@@ -4,7 +4,7 @@ const os = require("os");
 const path = require("path");
 const chalk = require("chalk");
 
-const tiktokService = require("./services/tiktok.service");
+const downloaderService = require("./services/downloaders");
 const storageService = require("./services/storage.service");
 const config = require("./config");
 
@@ -24,14 +24,19 @@ async function downloadVideo(videoUrl) {
   console.log(
     "\n" +
       chalk.gray(`[${timestamp()}]`) +
-      chalk.white(` ${EMOJI.start} Starting video download...`)
+      `${EMOJI.start} ${chalk.cyan("downloader")} ${chalk.yellow(
+        downloaderService.name
+      )}: Starting video download...`
   );
-  const stream = await tiktokService.downloadVideo(videoUrl);
+
+  const { stream, metadata } = await downloaderService.downloadVideo(videoUrl);
   console.log(
     chalk.gray(`[${timestamp()}]`) +
-      chalk.green(` ${EMOJI.stream} Video stream received.`)
+      `${EMOJI.stream} ${chalk.cyan("downloader")} ${chalk.yellow(
+        downloaderService.name
+      )}: Video stream received`
   );
-  return stream;
+  return { stream, metadata };
 }
 
 async function saveToFile(stream) {
@@ -42,14 +47,16 @@ async function saveToFile(stream) {
   await storageService.saveStreamToFile(stream, filePath);
   console.log(
     chalk.gray(`[${timestamp()}]`) +
-      chalk.green(` ${EMOJI.saved} Video saved to: ${filePath}`)
+      `${EMOJI.saved} ${chalk.cyan("system")}: Video saved to: ${chalk.gray(
+        filePath
+      )}`
   );
   return filePath;
 }
 
 async function run(videoUrl) {
   try {
-    const stream = await downloadVideo(videoUrl);
+    const { stream, metadata } = await downloadVideo(videoUrl);
     await saveToFile(stream);
   } catch (err) {
     console.error(
@@ -61,7 +68,7 @@ async function run(videoUrl) {
   console.log(
     "\n" +
       chalk.gray(`[${timestamp()}]`) +
-      chalk.white(` ${EMOJI.done} Process completed.\n`)
+      chalk.white(`${EMOJI.done} ${chalk.cyan("system")}: Process completed.\n`)
   );
 }
 

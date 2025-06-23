@@ -1,7 +1,7 @@
-// services/tiktok.service.js
+// services/downloaders/rapidapi-tiktok.service.js
 
 const axios = require("axios");
-const config = require("../config");
+const config = require("../../config");
 const CONFIG = config.rapidapi.tiktok;
 
 async function downloadVideo(videoUrl) {
@@ -17,9 +17,18 @@ async function downloadVideo(videoUrl) {
     responseType: "stream",
   });
 
-  return response.data;
+  return {
+    stream: response.data,
+    metadata: {
+      url: data.downloadUrl,
+      description: data.description,
+      cover: data.cover,
+      hashtags: data.hashtags.map((hashtag) => hashtag.hashtagName),
+    },
+  };
 }
 
 module.exports = {
   downloadVideo,
+  name: "rapidai-tiktok",
 };
