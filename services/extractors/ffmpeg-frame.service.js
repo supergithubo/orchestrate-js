@@ -1,39 +1,62 @@
-// services/extractors/ffmpeg-frame.service.js
+// services/extractors/ffmpeg-frame-extractor.js
 
 const path = require("path");
-const { exec } = require("child_process");
+const { exec, execSync } = require("child_process");
 
 const config = require("../../config");
 
-const FRAME_LIMIT = config.ffmpeg.frameLimit;
-const OUTPUT_DIR = config.ffmpeg.outputDir;
-const FILE_PREFIX = config.ffmpeg.filePrefix;
-const FILE_EXT = config.ffmpeg.fileExt;
-const BINARY = config.ffmpeg.binary;
+const CONFIG = config.ffmpeg;
 
-async function extractFrames(videoPath) {
-  return new Promise((resolve, reject) => {
-    const outputPattern = path.join(
-      OUTPUT_DIR,
-      `${FILE_PREFIX}%03d.${FILE_EXT}`
+const OUTPUT_DIR = CONFIG.outputDir;
+const FILE_PREFIX = CONFIG.filePrefix;
+const FILE_EXT = CONFIG.fileExt;
+const FRAME_LIMIT = CONFIG.frameLimit;
+const FFMPEG = CONFIG.binary || "ffmpeg";
+const FFPROBE = CONFIG.ffprobeBinary || "ffprobe";
+
+function getVideoDuration(filePath) {
+  try {
+    const cmd = `${FFPROBE} -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`;
+    const output = execSync(cmd).toString().trim();
+    return parseFloat(output);
+  } catch (err) {
+    throw new Error(
+      `Failed to get video duration using ffprobe: ${err.message}`
     );
-    const binary = BINARY || "ffmpeg";
-    const command = `"${binary}" -i "${videoPath}" -vf "fps=1" -vframes ${FRAME_LIMIT} "${outputPattern}" -hide_banner -loglevel error`;
+  }
+}
 
-    exec(command, (err, stdout, stderr) => {
-      if (err)
-        return reject(new Error(`ffmpeg error: ${stderr || err.message}`));
+async function extractFrames(videoPath, limit = FRAME_LIMIT) {
+  return new Promise((resolve, reject) => {
+    try {
+      const duration = getVideoDuration(videoPath);
+      const interval = duration / limit;
 
-      const frames = require("fs")
-        .readdirSync(OUTPUT_DIR)
-        .filter(
-          (file) =>
-            file.startsWith(FILE_PREFIX) && file.endsWith(`.${FILE_EXT}`)
-        )
-        .map((file) => path.join(OUTPUT_DIR, file));
+      const outputPattern = path.join(
+        OUTPUT_DIR,
+        `${FILE_PREFIX}%03d.${FILE_EXT}`
+      );
 
-      resolve(frames);
-    });
+      const vf = `fps=1/${interval.toFixed(2)}`;
+      const command = `${FFMPEG} -i "${videoPath}" -vf "${vf}" -frames:v ${limit} "${outputPattern}" -hide_banner -loglevel error`;
+
+      exec(command, (err, stdout, stderr) => {
+        if (err)
+          return reject(new Error(`ffmpeg error: ${stderr || err.message}`));
+
+        const frames = require("fs")
+          .readdirSync(OUTPUT_DIR)
+          .filter(
+            (file) =>
+              file.startsWith(FILE_PREFIX) && file.endsWith(`.${FILE_EXT}`)
+          )
+          .map((file) => path.join(OUTPUT_DIR, file));
+
+        resolve(frames);
+      });
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
