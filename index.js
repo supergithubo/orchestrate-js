@@ -4,6 +4,7 @@ const path = require("path");
 const chalk = require("chalk");
 
 const downloaderService = require("./services/downloaders");
+const llmService = require("./services/llms");
 const storageService = require("./services/storage.service");
 const config = require("./config");
 
@@ -15,7 +16,9 @@ async function downloadVideo(videoUrl) {
       chalk.gray(`[${timestamp()}]`) +
       ` ${chalk.cyan("downloader")} ${chalk.yellow(
         downloaderService.name
-      )}: Starting video download...`
+      )}: Starting video download: ${chalk.gray(
+        videoUrl
+      )}`
   );
 
   const { stream, metadata } = await downloaderService.downloadVideo(videoUrl);
@@ -43,10 +46,48 @@ async function saveToFile(stream) {
   return filePath;
 }
 
+async function transcribeVideo(filePath) {
+  console.log(
+    chalk.gray(`[${timestamp()}]`) +
+      ` ${chalk.cyan("llm")} ${chalk.yellow(`${llmService.name} ${llmService.transcriptionModel}`)}: transcribing audio...`
+  );
+
+  return await llmService.getAudioTranscription(filePath);
+}
+
+async function generateConcept({ transcript, metadata }) {
+  const messages = [
+    {
+      role: "system",
+      content: "You are an expert content strategist for short-form videos.",
+    },
+    {
+      role: "user",
+      content: `Here is the transcript of a TikTok video:\n\n${transcript}\n\n` +
+               `The video is described as: "${metadata.description}"\n` +
+               `Hashtags: ${metadata.hashtags.join(", ")}\n\n` +
+               `Based on this, summarize the narrative and suggest 3 alternative but related concepts that could perform well.`,
+    },
+  ];
+
+  console.log(
+    chalk.gray(`[${timestamp()}]`) +
+      ` ${chalk.cyan("llm")} ${chalk.yellow(`${llmService.name} ${llmService.chatModel}`)}: generating concepts...`
+  );
+  return await llmService.getChatResponse(messages);
+}
+
 async function run(videoUrl) {
   try {
     const { stream, metadata } = await downloadVideo(videoUrl);
-    await saveToFile(stream);
+    const filePath = await saveToFile(stream);
+    const transcription = await transcribeVideo(filePath);
+    const concepts = await generateConcept({transcription, metadata});
+
+    console.log(
+      chalk.gray(`[${timestamp()}]`) +
+        chalk.green(` ✅ Concept generated:\n\n${concepts}\n`)
+    );
   } catch (err) {
     console.error(
       chalk.gray(`[${timestamp()}]`) +
@@ -60,4 +101,4 @@ async function run(videoUrl) {
   );
 }
 
-run("https://www.tiktok.com/@reallyweirdai/video/7514210049024118038");
+run("https://www.tiktok.com/@asmraiworks/video/7517745929076657438");

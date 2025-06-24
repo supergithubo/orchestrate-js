@@ -11,6 +11,20 @@ function saveStreamToFile(stream, filePath) {
   });
 }
 
+function getFileStream(filePath) {
+  return fs.createReadStream(filePath);
+}
+
+async function getStreamBuffer(stream) {
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
 module.exports = {
   saveStreamToFile,
+  getFileStream,
+  getStreamBuffer
 };
