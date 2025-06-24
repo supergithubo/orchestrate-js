@@ -4,7 +4,7 @@ const axios = require("axios");
 
 const config = require("../../config");
 
-const APIKEY = config.rapidapi.tiktok.apiKey;
+const APIKEY = config.rapidapi.apiKey;
 const HOST = config.rapidapi.tiktok.host;
 const URL = config.rapidapi.tiktok.url;
 
