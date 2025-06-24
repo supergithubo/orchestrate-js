@@ -26,5 +26,5 @@ async function getStreamBuffer(stream) {
 module.exports = {
   saveStreamToFile,
   getFileStream,
-  getStreamBuffer
+  getStreamBuffer,
 };

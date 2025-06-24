@@ -2,4 +2,5 @@
 /tmp/*
 !/tmp/.gitkeep
 !.gitignore
-config.json
+.env
+config.local.js
