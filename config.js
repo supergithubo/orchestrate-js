@@ -3,34 +3,32 @@ require("dotenv").config();
 const baseConfig = {
   app: {
     videoUrl: "https://www.tiktok.com/@asmraiworks/video/7517745929076657438",
-    downloader: "rapidapi-tiktok",
-    llm: "openai",
-    extractor: "ffmpeg-frame",
-    vision: "openai-vision",
-    transcriber: "openai-whisper",
+    outputFile: {
+      prefix: "tiktok_video_",
+      ext: "mp4",
+      folder: "tmp",
+    },
+    services: {
+      downloader: "rapidapi-tiktok",
+      llm: "openai",
+      extractor: "ffmpeg-frame",
+      vision: "openai-vision",
+      transcriber: "openai-whisper",
+    },
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
-    model: "gpt-4o",
-  },
-  openaivision: {
-    apiKey: process.env.OPENAI_API_KEY,
-    model: "gpt-4o",
-  },
-  openaiwhisper: {
-    apiKey: process.env.OPENAI_API_KEY,
-    model: "whisper-1",
+    models: {
+      llm: "gpt-4o",
+      vision: "gpt-4o",
+      transcription: "whisper-1",
+    },
   },
   rapidapi: {
     apiKey: process.env.RAPIDAPI_KEY,
     tiktok: {
       host: "tiktok-video-downloader-api.p.rapidapi.com",
       url: "https://tiktok-video-downloader-api.p.rapidapi.com/media",
-      outputFile: {
-        prefix: "tiktok_video_",
-        ext: "mp4",
-        folder: "tmp",
-      },
     },
   },
   ffmpeg: {

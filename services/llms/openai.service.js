@@ -7,7 +7,7 @@ const config = require("../../config");
 const storageService = require("../storage.service");
 
 const APIKEY = config.openai.apiKey;
-const MODEL = config.openai.model;
+const MODEL = config.openai.models.llm;
 
 const openai = new OpenAI({
   apiKey: APIKEY,
@@ -15,7 +15,7 @@ const openai = new OpenAI({
 
 async function getChatResponse(messages) {
   const response = await openai.chat.completions.create({
-    model: CHAT_MODEL,
+    model: MODEL,
     messages: messages,
   });
   return response.choices[0].message.content;
@@ -23,6 +23,5 @@ async function getChatResponse(messages) {
 
 module.exports = {
   getChatResponse,
-  name: "open-ai",
-  model: MODEL,
+  name: `open-ai-${MODEL}`,
 };

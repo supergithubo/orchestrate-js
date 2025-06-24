@@ -1,7 +1,7 @@
 // services/llms/index.js
 
 const config = require("../../config");
-const key = config.app.llm || "openai";
+const key = config.app.services.llm || "openai";
 
 let service;
 
@@ -13,9 +13,6 @@ try {
   }
   if (typeof service.name !== "string") {
     throw new Error(`Module '${key}' must export 'name'`);
-  }
-  if (typeof service.model !== "string") {
-    throw new Error(`Module '${key}' must export 'model'`);
   }
 } catch (err) {
   throw new Error(`LLM "${key}" failed to load: ${err.message}`);

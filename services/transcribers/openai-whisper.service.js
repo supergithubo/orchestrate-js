@@ -7,8 +7,8 @@ const config = require("../../config");
 
 const storageService = require("../storage.service");
 
-const APIKEY = config.openaiwhisper.apiKey;
-const MODEL = config.openaiwhisper.model;
+const APIKEY = config.openai.apiKey;
+const MODEL = config.openai.models.transcription;
 
 if (typeof globalThis.File === "undefined") {
   globalThis.File = File;
@@ -39,6 +39,5 @@ async function getAudioTranscription(filePath) {
 
 module.exports = {
   getAudioTranscription,
-  name: "open-ai",
-  model: MODEL,
+  name: `open-ai-${MODEL}`,
 };

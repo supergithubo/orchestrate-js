@@ -1,7 +1,7 @@
 // services/extractors/index.js
 
 const config = require("../../config");
-const key = config.app.extractor || "ffmpeg-frame";
+const key = config.app.services.extractor || "ffmpeg-frame";
 
 let extractor;
 

@@ -31,48 +31,57 @@ async function downloadVideo(videoUrl) {
         downloaderService.name
       )}: Video stream received!`
   );
-  return { stream, metadata };
-}
 
-async function saveVideoToFile(stream) {
-  const { prefix, ext, folder } = config.rapidapi.tiktok.outputFile;
+  const { prefix, ext, folder } = config.app.outputFile;
   const filename = `${prefix}_${Date.now()}.${ext}`;
-  const outputFile = path.join(folder, filename);
+  const filePath = path.join(folder, filename);
 
   storageService.ensureDirExists(folder);
   storageService.clearFolder(folder);
 
-  await storageService.saveStreamToFile(stream, outputFile);
+  await storageService.saveStreamToFile(stream, filePath);
   console.log(
     chalk.gray(`[${timestamp()}]`) +
       ` ${chalk.cyan("system")} ${chalk.yellow(
         "fs-storage"
-      )}: Video saved to: ${chalk.gray(outputFile)}`
+      )}: Video saved to: ${chalk.gray(filePath)}`
   );
-  return outputFile;
+
+  return { filePath, metadata };
 }
 
 async function transcribeVideo(filePath) {
-  const { name, model } = transcriberService;
+  const { name } = transcriberService;
 
   console.log(
     chalk.gray(`[${timestamp()}]`) +
       ` ${chalk.cyan("transcriber")} ${chalk.yellow(
-        `${name}-${model}`
+        `${name}`
       )}: Transcribing audio...`
   );
 
   const { text, metadata } = await transcriberService.getAudioTranscription(
     filePath
   );
+
+  const outputPath = path.join("tmp", "transcription.txt");
+  await storageService.saveTextToFile(text, outputPath);
+
   console.log(
     chalk.gray(`[${timestamp()}]`) +
       ` ${chalk.cyan("transcriber")} ${chalk.yellow(
-        `${name}-${model}`
+        `${name}`
       )}: Audio transcribed: ${chalk.gray(
         `${metadata.textLength} chars | ${metadata.duration} seconds | ${metadata.segmentCount} segments`
       )}`
   );
+  console.log(
+    chalk.gray(`[${timestamp()}]`) +
+      ` ${chalk.cyan("system")} ${chalk.yellow(
+        "fs-storage"
+      )}: Transcription saved to: ${chalk.gray(outputPath)}`
+  );
+
   return text;
 }
 
@@ -111,16 +120,25 @@ async function analyzeFrames(frames, metadata) {
 
   const results = await visionService.analyzeFrames(frames, metadata);
 
+  const outputPath = path.join("tmp", "analysis.txt");
+  await storageService.saveTextToFile(results, outputPath);
+
   console.log(
     chalk.gray(`[${timestamp()}]`) +
       ` ${chalk.cyan("vision")} ${chalk.yellow(name)}: Analysis complete.`
+  );
+  console.log(
+    chalk.gray(`[${timestamp()}]`) +
+      ` ${chalk.cyan("system")} ${chalk.yellow(
+        "fs-storage"
+      )}: Analysis saved to: ${chalk.gray(outputPath)}`
   );
 
   return results;
 }
 
-async function generateConcept({ transcript, metadata }) {
-  const { name, chatModel } = llmService;
+async function generateConcept({ transcript, metadata, frameDescriptions }) {
+  const { name } = llmService;
 
   const messages = [
     {
@@ -133,16 +151,18 @@ async function generateConcept({ transcript, metadata }) {
         `Here is the transcript of a TikTok video:\n\n${transcript}\n\n` +
         `The video is described as: "${metadata.description}"\n` +
         `Hashtags: ${metadata.hashtags.join(", ")}\n\n` +
+        `Visual analysis of the frames:\n${frameDescriptions}\n\n` +
         `Based on this, summarize the narrative and suggest 3 alternative but related concepts that could perform well.`,
     },
   ];
 
   console.log(
     chalk.gray(`[${timestamp()}]`) +
-      ` ${chalk.cyan("llm")} ${chalk.yellow(
-        `${name} ${chatModel}`
-      )}: generating concepts...`
+      ` ${chalk.cyan("language")} ${chalk.yellow(
+        `${name}`
+      )}: Generating content concepts...`
   );
+
   return await llmService.getChatResponse(messages);
 }
 
@@ -150,24 +170,23 @@ async function generateConcept({ transcript, metadata }) {
 
 async function run(videoUrl) {
   try {
-    const { stream, metadata } = await downloadVideo(videoUrl);
-    const filePath = await saveVideoToFile(stream);
+    const { filePath, metadata } = await downloadVideo(videoUrl);
     const [transcription, frames] = await Promise.all([
       transcribeVideo(filePath),
       extractFrames(filePath),
     ]);
 
     const frameDescriptions = await analyzeFrames(frames, metadata);
-    console.log(frameDescriptions);
-    /**
-    const concepts = await generateConcept({ transcription, metadata });
+    const concepts = await generateConcept({
+      transcription,
+      metadata,
+      frameDescriptions,
+    });
 
     console.log(
       chalk.gray(`[${timestamp()}]`) +
         chalk.green(` ✅ Concept generated:\n\n${concepts}\n`)
-    ); */
-
-    console.log(metadata);
+    );
   } catch (err) {
     console.error(
       chalk.gray(`[${timestamp()}]`) + chalk.red(` Error: ${err.message}`)

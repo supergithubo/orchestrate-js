@@ -1,7 +1,7 @@
 // services/downloaders/index.js
 
 const config = require("../../config");
-const key = config.app.downloader || "rapidapi-tiktok";
+const key = config.app.services.downloader || "rapidapi-tiktok";
 
 let service;
 

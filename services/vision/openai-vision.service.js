@@ -8,8 +8,8 @@ const config = require("../../config");
 
 const storageService = require("../storage.service");
 
-const APIKEY = config.openaivision.apiKey;
-const CHAT_MODEL = config.openaivision.model;
+const APIKEY = config.openai.apiKey;
+const MODEL = config.openai.models.vision;
 
 const openai = new OpenAI({
   apiKey: APIKEY,
@@ -70,7 +70,7 @@ async function analyzeFrames(frames = [], additionalContext = null) {
     ];
 
     const response = await openai.chat.completions.create({
-      model: CHAT_MODEL,
+      model: MODEL,
       messages,
     });
 
@@ -81,6 +81,6 @@ async function analyzeFrames(frames = [], additionalContext = null) {
 }
 
 module.exports = {
-  name: `open-ai-vision-${CHAT_MODEL}`,
+  name: `open-ai-vision-${MODEL}`,
   analyzeFrames,
 };
