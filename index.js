@@ -27,7 +27,7 @@ async function downloadVideo(videoUrl) {
     chalk.gray(`[${timestamp()}]`) +
       ` ${chalk.cyan("downloader")} ${chalk.yellow(
         downloaderService.name
-      )}: Video stream received`
+      )}: Video stream received!`
   );
   return { stream, metadata };
 }
@@ -35,19 +35,19 @@ async function downloadVideo(videoUrl) {
 async function saveVideoToFile(stream) {
   const { prefix, ext, folder } = config.rapidapi.tiktok.outputFile;
   const filename = `${prefix}_${Date.now()}.${ext}`;
-  const filePath = path.join(folder, filename);
+  const outputFile = path.join(folder, filename);
 
   storageService.ensureDirExists(folder);
   storageService.clearFolder(folder);
 
-  await storageService.saveStreamToFile(stream, filePath);
+  await storageService.saveStreamToFile(stream, outputFile);
   console.log(
     chalk.gray(`[${timestamp()}]`) +
       ` ${chalk.cyan("system")} ${chalk.yellow(
-        "storage"
-      )}: Video saved to: ${chalk.gray(filePath)}`
+        "fs-storage"
+      )}: Video saved to: ${chalk.gray(outputFile)}`
   );
-  return filePath;
+  return outputFile;
 }
 
 async function transcribeVideo(filePath) {
@@ -55,12 +55,21 @@ async function transcribeVideo(filePath) {
 
   console.log(
     chalk.gray(`[${timestamp()}]`) +
-      ` ${chalk.cyan("llm")} ${chalk.yellow(
-        `${name} ${transcriptionModel}`
-      )}: transcribing audio...`
+      ` ${chalk.cyan("language")} ${chalk.yellow(
+        `${name}-${transcriptionModel}`
+      )}: Transcribing audio...`
   );
 
-  return await llmService.getAudioTranscription(filePath);
+  const { text, metadata } = await llmService.getAudioTranscription(filePath);
+  console.log(
+    chalk.gray(`[${timestamp()}]`) +
+      ` ${chalk.cyan("language")} ${chalk.yellow(
+        `${name}-${transcriptionModel}`
+      )}: Audio transcribed: ${chalk.gray(
+        `${metadata.textLength} chars | ${metadata.duration} seconds | ${metadata.segmentCount} segments`
+      )}`
+  );
+  return text;
 }
 
 async function extractFrames(filePath) {
@@ -80,7 +89,7 @@ async function extractFrames(filePath) {
     chalk.gray(`[${timestamp()}]`) +
       ` ${chalk.cyan("extractor")} ${chalk.yellow(name)}: extracted ${
         frames.length
-      } frames`
+      } frames to: ${chalk.gray(outputDir)}`
   );
 
   return frames;
@@ -119,12 +128,10 @@ async function run(videoUrl) {
   try {
     const { stream, metadata } = await downloadVideo(videoUrl);
     const filePath = await saveVideoToFile(stream);
-
     const [transcription, frames] = await Promise.all([
       transcribeVideo(filePath),
       extractFrames(filePath),
     ]);
-    console.log(transcription);
     /**
     const concepts = await generateConcept({ transcription, metadata });
 
@@ -141,7 +148,9 @@ async function run(videoUrl) {
   console.log(
     chalk.gray(`[${timestamp()}]`) +
       chalk.white(
-        ` ${chalk.cyan("system")} ${chalk.yellow("core")}: Process completed.\n`
+        ` ${chalk.cyan("system")} ${chalk.yellow(
+          "core-app"
+        )}: Process completed.\n`
       )
   );
 }
