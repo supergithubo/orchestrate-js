@@ -7,6 +7,7 @@ const llmService = require("./services/llms");
 const downloaderService = require("./services/downloaders");
 const extractorService = require("./services/extractors");
 const visionService = require("./services/vision");
+const transcriberService = require("./services/transcribers");
 const storageService = require("./services/storage.service");
 const config = require("./config");
 
@@ -52,20 +53,22 @@ async function saveVideoToFile(stream) {
 }
 
 async function transcribeVideo(filePath) {
-  const { name, transcriptionModel } = llmService;
+  const { name, model } = transcriberService;
 
   console.log(
     chalk.gray(`[${timestamp()}]`) +
-      ` ${chalk.cyan("language")} ${chalk.yellow(
-        `${name}-${transcriptionModel}`
+      ` ${chalk.cyan("transcriber")} ${chalk.yellow(
+        `${name}-${model}`
       )}: Transcribing audio...`
   );
 
-  const { text, metadata } = await llmService.getAudioTranscription(filePath);
+  const { text, metadata } = await transcriberService.getAudioTranscription(
+    filePath
+  );
   console.log(
     chalk.gray(`[${timestamp()}]`) +
-      ` ${chalk.cyan("language")} ${chalk.yellow(
-        `${name}-${transcriptionModel}`
+      ` ${chalk.cyan("transcriber")} ${chalk.yellow(
+        `${name}-${model}`
       )}: Audio transcribed: ${chalk.gray(
         `${metadata.textLength} chars | ${metadata.duration} seconds | ${metadata.segmentCount} segments`
       )}`
@@ -78,7 +81,7 @@ async function extractFrames(filePath) {
 
   console.log(
     chalk.gray(`[${timestamp()}]`) +
-      ` ${chalk.cyan("extractor")} ${chalk.yellow(name)}: extracting frames...`
+      ` ${chalk.cyan("extractor")} ${chalk.yellow(name)}: Extracting frames...`
   );
 
   storageService.ensureDirExists(outputDir);
@@ -88,7 +91,7 @@ async function extractFrames(filePath) {
 
   console.log(
     chalk.gray(`[${timestamp()}]`) +
-      ` ${chalk.cyan("extractor")} ${chalk.yellow(name)}: extracted ${
+      ` ${chalk.cyan("extractor")} ${chalk.yellow(name)}: Extracted ${
         frames.length
       } frames to: ${chalk.gray(outputDir)}`
   );
@@ -101,7 +104,7 @@ async function analyzeFrames(frames, metadata) {
 
   console.log(
     chalk.gray(`[${timestamp()}]`) +
-      ` ${chalk.cyan("vision")} ${chalk.yellow(name)}: analyzing ${
+      ` ${chalk.cyan("vision")} ${chalk.yellow(name)}: Analyzing ${
         frames.length
       } frames...`
   );
@@ -110,7 +113,7 @@ async function analyzeFrames(frames, metadata) {
 
   console.log(
     chalk.gray(`[${timestamp()}]`) +
-      ` ${chalk.cyan("vision")} ${chalk.yellow(name)}: analysis complete.`
+      ` ${chalk.cyan("vision")} ${chalk.yellow(name)}: Analysis complete.`
   );
 
   return results;

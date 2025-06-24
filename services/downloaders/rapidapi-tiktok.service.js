@@ -34,5 +34,5 @@ async function downloadVideo(videoUrl) {
 
 module.exports = {
   downloadVideo,
-  name: "rapidai-tiktok",
+  name: "rapid-ai-tiktok",
 };

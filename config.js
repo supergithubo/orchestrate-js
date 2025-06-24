@@ -7,13 +7,19 @@ const baseConfig = {
     llm: "openai",
     extractor: "ffmpeg-frame",
     vision: "openai-vision",
+    transcriber: "openai-whisper",
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
-    models: {
-      chat: "gpt-4o",
-      transcription: "whisper-1",
-    },
+    model: "gpt-4o",
+  },
+  openaivision: {
+    apiKey: process.env.OPENAI_API_KEY,
+    model: "gpt-4o",
+  },
+  openaiwhisper: {
+    apiKey: process.env.OPENAI_API_KEY,
+    model: "whisper-1",
   },
   rapidapi: {
     apiKey: process.env.RAPIDAPI_KEY,
@@ -42,10 +48,6 @@ const baseConfig = {
       version:
         "2e1dddc8621f72155f24cf2e0adbde548458d3cab9f00c0139eea840d0ac4746",
     },
-  },
-  openaivision: {
-    apiKey: process.env.OPENAI_API_KEY,
-    model: "gpt-4o",
   },
 };
 

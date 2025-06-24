@@ -81,6 +81,6 @@ async function analyzeFrames(frames = [], additionalContext = null) {
 }
 
 module.exports = {
-  name: `openai-vision-${CHAT_MODEL}`,
+  name: `open-ai-vision-${CHAT_MODEL}`,
   analyzeFrames,
 };
