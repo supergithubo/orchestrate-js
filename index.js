@@ -1,6 +1,5 @@
 // index.js
 
-const os = require("os");
 const path = require("path");
 const chalk = require("chalk");
 
@@ -8,23 +7,13 @@ const downloaderService = require("./services/downloaders");
 const storageService = require("./services/storage.service");
 const config = require("./config");
 
-const ISWIN32 = os.platform() === "win32";
 const timestamp = () => new Date().toISOString();
-const emoji = (icon) => (ISWIN32 ? "" : icon);
-
-const EMOJI = {
-  start: emoji("📥"),
-  stream: emoji("✅"),
-  saved: emoji("📁"),
-  error: emoji("❌"),
-  done: emoji("🏁"),
-};
 
 async function downloadVideo(videoUrl) {
   console.log(
     "\n" +
       chalk.gray(`[${timestamp()}]`) +
-      `${EMOJI.start} ${chalk.cyan("downloader")} ${chalk.yellow(
+      ` ${chalk.cyan("downloader")} ${chalk.yellow(
         downloaderService.name
       )}: Starting video download...`
   );
@@ -32,7 +21,7 @@ async function downloadVideo(videoUrl) {
   const { stream, metadata } = await downloaderService.downloadVideo(videoUrl);
   console.log(
     chalk.gray(`[${timestamp()}]`) +
-      `${EMOJI.stream} ${chalk.cyan("downloader")} ${chalk.yellow(
+      ` ${chalk.cyan("downloader")} ${chalk.yellow(
         downloaderService.name
       )}: Video stream received`
   );
@@ -47,7 +36,7 @@ async function saveToFile(stream) {
   await storageService.saveStreamToFile(stream, filePath);
   console.log(
     chalk.gray(`[${timestamp()}]`) +
-      `${EMOJI.saved} ${chalk.cyan("system")}: Video saved to: ${chalk.gray(
+      ` ${chalk.cyan("system")} ${chalk.yellow("storage")}: Video saved to: ${chalk.gray(
         filePath
       )}`
   );
@@ -61,14 +50,13 @@ async function run(videoUrl) {
   } catch (err) {
     console.error(
       chalk.gray(`[${timestamp()}]`) +
-        chalk.red(` ${EMOJI.error} Error: ${err.message}`)
+        chalk.red(` Error: ${err.message}`)
     );
   }
 
   console.log(
-    "\n" +
       chalk.gray(`[${timestamp()}]`) +
-      chalk.white(`${EMOJI.done} ${chalk.cyan("system")}: Process completed.\n`)
+      chalk.white(` ${chalk.cyan("system")} ${chalk.yellow("core")}: Process completed.\n`)
   );
 }
 
