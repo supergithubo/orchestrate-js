@@ -96,7 +96,7 @@ async function extractFrames(filePath) {
   return frames;
 }
 
-async function analyzeFrames(frames) {
+async function analyzeFrames(frames, metadata) {
   const { name } = visionService;
 
   console.log(
@@ -106,7 +106,7 @@ async function analyzeFrames(frames) {
       } frames...`
   );
 
-  const results = await visionService.analyzeFrames(frames);
+  const results = await visionService.analyzeFrames(frames, metadata);
 
   console.log(
     chalk.gray(`[${timestamp()}]`) +
@@ -154,8 +154,7 @@ async function run(videoUrl) {
       extractFrames(filePath),
     ]);
 
-    const frameDescriptions = await analyzeFrames(frames);
-
+    const frameDescriptions = await analyzeFrames(frames, metadata);
     console.log(frameDescriptions);
     /**
     const concepts = await generateConcept({ transcription, metadata });
@@ -164,6 +163,8 @@ async function run(videoUrl) {
       chalk.gray(`[${timestamp()}]`) +
         chalk.green(` ✅ Concept generated:\n\n${concepts}\n`)
     ); */
+
+    console.log(metadata);
   } catch (err) {
     console.error(
       chalk.gray(`[${timestamp()}]`) + chalk.red(` Error: ${err.message}`)

@@ -6,7 +6,7 @@ const baseConfig = {
     downloader: "rapidapi-tiktok",
     llm: "openai",
     extractor: "ffmpeg-frame",
-    vision: "replicate-blip",
+    vision: "openai-vision",
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
@@ -29,6 +29,7 @@ const baseConfig = {
   },
   ffmpeg: {
     binary: "C:\\ffmpeg\\bin\\ffmpeg.exe",
+    ffprobeBinary: "C:\\ffmpeg\\bin\\ffprobe.exe",
     frameLimit: 10,
     outputDir: "tmp\\frames",
     filePrefix: "frame_",
@@ -41,6 +42,10 @@ const baseConfig = {
       version:
         "2e1dddc8621f72155f24cf2e0adbde548458d3cab9f00c0139eea840d0ac4746",
     },
+  },
+  openaivision: {
+    apiKey: process.env.OPENAI_API_KEY,
+    model: "gpt-4o",
   },
 };
 

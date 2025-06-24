@@ -12,7 +12,7 @@ const APITOKEN = config.replicate.apiToken;
 const URL = config.replicate.url;
 const VERSION = config.replicate.blip.modelVersion;
 
-async function analyzeFrames(frames = []) {
+async function analyzeFrames(frames = [], additionalContext = null) {
   const results = [];
 
   for (const framePath of frames) {
