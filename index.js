@@ -6,6 +6,7 @@ const chalk = require("chalk");
 const llmService = require("./services/llms");
 const downloaderService = require("./services/downloaders");
 const extractorService = require("./services/extractors");
+const visionService = require("./services/vision");
 const storageService = require("./services/storage.service");
 const config = require("./config");
 
@@ -95,6 +96,26 @@ async function extractFrames(filePath) {
   return frames;
 }
 
+async function analyzeFrames(frames) {
+  const { name } = visionService;
+
+  console.log(
+    chalk.gray(`[${timestamp()}]`) +
+      ` ${chalk.cyan("vision")} ${chalk.yellow(name)}: analyzing ${
+        frames.length
+      } frames...`
+  );
+
+  const results = await visionService.analyzeFrames(frames);
+
+  console.log(
+    chalk.gray(`[${timestamp()}]`) +
+      ` ${chalk.cyan("vision")} ${chalk.yellow(name)}: analysis complete.`
+  );
+
+  return results;
+}
+
 async function generateConcept({ transcript, metadata }) {
   const { name, chatModel } = llmService;
 
@@ -132,6 +153,10 @@ async function run(videoUrl) {
       transcribeVideo(filePath),
       extractFrames(filePath),
     ]);
+
+    const frameDescriptions = await analyzeFrames(frames);
+
+    console.log(frameDescriptions);
     /**
     const concepts = await generateConcept({ transcription, metadata });
 

@@ -6,6 +6,7 @@ const baseConfig = {
     downloader: "rapidapi-tiktok",
     llm: "openai",
     extractor: "ffmpeg-frame",
+    vision: "replicate-blip",
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
@@ -15,8 +16,8 @@ const baseConfig = {
     },
   },
   rapidapi: {
+    apiKey: process.env.RAPIDAPI_KEY,
     tiktok: {
-      apiKey: process.env.RAPIDAPI_KEY,
       host: "tiktok-video-downloader-api.p.rapidapi.com",
       url: "https://tiktok-video-downloader-api.p.rapidapi.com/media",
       outputFile: {
@@ -29,9 +30,17 @@ const baseConfig = {
   ffmpeg: {
     binary: "C:\\ffmpeg\\bin\\ffmpeg.exe",
     frameLimit: 10,
-    outputDir: "tmp/frames",
+    outputDir: "tmp\\frames",
     filePrefix: "frame_",
     fileExt: "jpg",
+  },
+  replicate: {
+    apiToken: process.env.REPLICATE_API_TOKEN,
+    url: "https://api.replicate.com/v1/predictions",
+    blip: {
+      version:
+        "2e1dddc8621f72155f24cf2e0adbde548458d3cab9f00c0139eea840d0ac4746",
+    },
   },
 };
 
