@@ -1,6 +1,7 @@
 // services/storage.service.js
 
 const fs = require("fs");
+const path = require("path");
 
 function saveStreamToFile(stream, filePath) {
   return new Promise((resolve, reject) => {
@@ -23,8 +24,31 @@ async function getStreamBuffer(stream) {
   return Buffer.concat(chunks);
 }
 
+function ensureDirExists(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+}
+
+function clearFolder(dirPath) {
+  if (!fs.existsSync(dirPath)) return;
+
+  fs.readdirSync(dirPath).forEach((entry) => {
+    const entryPath = path.join(dirPath, entry);
+    const stat = fs.statSync(entryPath);
+
+    if (stat.isDirectory()) {
+      fs.rmSync(entryPath, { recursive: true, force: true });
+    } else {
+      fs.unlinkSync(entryPath);
+    }
+  });
+}
+
 module.exports = {
   saveStreamToFile,
   getFileStream,
   getStreamBuffer,
+  ensureDirExists,
+  clearFolder,
 };

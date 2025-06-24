@@ -3,8 +3,9 @@
 const path = require("path");
 const chalk = require("chalk");
 
-const downloaderService = require("./services/downloaders");
 const llmService = require("./services/llms");
+const downloaderService = require("./services/downloaders");
+const extractorService = require("./services/extractors");
 const storageService = require("./services/storage.service");
 const config = require("./config");
 
@@ -31,10 +32,13 @@ async function downloadVideo(videoUrl) {
   return { stream, metadata };
 }
 
-async function saveToFile(stream) {
+async function saveVideoToFile(stream) {
   const { prefix, ext, folder } = config.rapidapi.tiktok.outputFile;
   const filename = `${prefix}_${Date.now()}.${ext}`;
   const filePath = path.join(folder, filename);
+
+  storageService.ensureDirExists(folder);
+  storageService.clearFolder(folder);
 
   await storageService.saveStreamToFile(stream, filePath);
   console.log(
@@ -47,17 +51,44 @@ async function saveToFile(stream) {
 }
 
 async function transcribeVideo(filePath) {
+  const { name, transcriptionModel } = llmService;
+
   console.log(
     chalk.gray(`[${timestamp()}]`) +
       ` ${chalk.cyan("llm")} ${chalk.yellow(
-        `${llmService.name} ${llmService.transcriptionModel}`
+        `${name} ${transcriptionModel}`
       )}: transcribing audio...`
   );
 
   return await llmService.getAudioTranscription(filePath);
 }
 
+async function extractFrames(filePath) {
+  const { name, outputDir } = extractorService;
+
+  console.log(
+    chalk.gray(`[${timestamp()}]`) +
+      ` ${chalk.cyan("extractor")} ${chalk.yellow(name)}: extracting frames...`
+  );
+
+  storageService.ensureDirExists(outputDir);
+  storageService.clearFolder(outputDir);
+
+  const frames = await extractorService.extractFrames(filePath);
+
+  console.log(
+    chalk.gray(`[${timestamp()}]`) +
+      ` ${chalk.cyan("extractor")} ${chalk.yellow(name)}: extracted ${
+        frames.length
+      } frames`
+  );
+
+  return frames;
+}
+
 async function generateConcept({ transcript, metadata }) {
+  const { name, chatModel } = llmService;
+
   const messages = [
     {
       role: "system",
@@ -76,7 +107,7 @@ async function generateConcept({ transcript, metadata }) {
   console.log(
     chalk.gray(`[${timestamp()}]`) +
       ` ${chalk.cyan("llm")} ${chalk.yellow(
-        `${llmService.name} ${llmService.chatModel}`
+        `${name} ${chatModel}`
       )}: generating concepts...`
   );
   return await llmService.getChatResponse(messages);
@@ -87,14 +118,20 @@ async function generateConcept({ transcript, metadata }) {
 async function run(videoUrl) {
   try {
     const { stream, metadata } = await downloadVideo(videoUrl);
-    const filePath = await saveToFile(stream);
-    const transcription = await transcribeVideo(filePath);
+    const filePath = await saveVideoToFile(stream);
+
+    const [transcription, frames] = await Promise.all([
+      transcribeVideo(filePath),
+      extractFrames(filePath),
+    ]);
+    console.log(transcription);
+    /**
     const concepts = await generateConcept({ transcription, metadata });
 
     console.log(
       chalk.gray(`[${timestamp()}]`) +
         chalk.green(` ✅ Concept generated:\n\n${concepts}\n`)
-    );
+    ); */
   } catch (err) {
     console.error(
       chalk.gray(`[${timestamp()}]`) + chalk.red(` Error: ${err.message}`)
@@ -109,4 +146,4 @@ async function run(videoUrl) {
   );
 }
 
-run("https://www.tiktok.com/@mukbangcat_asmr/video/7515785660729691400");
+run(config.app.videoUrl);

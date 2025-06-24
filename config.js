@@ -2,8 +2,10 @@ require("dotenv").config();
 
 const baseConfig = {
   app: {
+    videoUrl: "https://www.tiktok.com/@asmraiworks/video/7517745929076657438",
     downloader: "rapidapi-tiktok",
     llm: "openai",
+    extractor: "ffmpeg-frame",
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
@@ -23,6 +25,13 @@ const baseConfig = {
         folder: "tmp",
       },
     },
+  },
+  ffmpeg: {
+    binary: "C:\\ffmpeg\\bin\\ffmpeg.exe",
+    frameLimit: 10,
+    outputDir: "tmp/frames",
+    filePrefix: "frame_",
+    fileExt: "jpg",
   },
 };
 
