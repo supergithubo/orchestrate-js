@@ -8,6 +8,8 @@ const baseConfig = {
       ext: "mp4",
       folder: "tmp",
     },
+    saveTranscription: "tmp\\transcription.txt",
+    saveAnalysis: "tmp\\analysis.txt",
     services: {
       downloader: "rapidapi-tiktok",
       llm: "openai",

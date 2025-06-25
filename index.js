@@ -1,4 +1,7 @@
-module.exports = [
+const config = require("./config");
+const runWorkflow = require("./runner");
+
+const workflow = [
   {
     type: "series",
     command: "downloadTiktokVideo",
@@ -16,6 +19,9 @@ module.exports = [
         command: "transcribeVideo",
         params: (context) => ({
           filePath: context.filePath,
+          opts: {
+            saveFile: context.config.app.saveTranscription,
+          },
         }),
         returns: ["transcription"],
       },
@@ -35,6 +41,9 @@ module.exports = [
     params: (context) => ({
       frames: context.frames,
       metadata: context.metadata,
+      opts: {
+        saveFile: context.config.app.saveAnalysis,
+      },
     }),
     returns: ["frameDescriptions"],
   },
@@ -49,3 +58,15 @@ module.exports = [
     returns: ["concepts"],
   },
 ];
+
+(async () => {
+  try {
+    const result = await runWorkflow(workflow, { config });
+    console.log(
+      "\n✅ Workflow completed with result:\n",
+      result.concepts || result
+    );
+  } catch (err) {
+    console.error("❌ Error in workflow:", err);
+  }
+})();

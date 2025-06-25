@@ -4,11 +4,13 @@ const logger = require("../services/logger.service");
 const storageService = require("../services/storage.service");
 const transcriberService = require("../services/transcribers");
 
-module.exports = async function ({ filePath }) {
+module.exports = async function ({ filePath, opts }) {
   const { name, getAudioTranscription } = transcriberService;
 
   logger.log("transcriber", name, "Transcribing audio...");
-  const { text, metadata } = await getAudioTranscription(filePath);
+  const { text: transcription, metadata } = await getAudioTranscription(
+    filePath
+  );
 
   const { textLength, duration, segmentCount } = metadata;
   logger.log(
@@ -18,11 +20,16 @@ module.exports = async function ({ filePath }) {
     `${textLength} chars | ${duration} seconds | ${segmentCount} segments`
   );
 
-  const outputPath = path.join("tmp", "transcription.txt");
+  if (opts && opts.saveFile) {
+    logger.log("transcriber", "fs-storage", "Saving transcription to file...");
+    await storageService.saveTextToFile(transcription, opts.saveFile);
+    logger.log(
+      "transcriber",
+      "fs-storage",
+      "Transcription saved to:",
+      opts.saveFile
+    );
+  }
 
-  logger.log("system", "fs-storage", "Saving transcription to file...");
-  await storageService.saveTextToFile(text, outputPath);
-  logger.log("system", "fs-storage", "Transcription saved to:", outputPath);
-
-  return { transcription: text };
+  return { transcription };
 };
