@@ -21,7 +21,8 @@ OrchestrateJS is a **developer-focused workflow automation/orchestration framewo
 ├── config.js         # Main configuration
 ├── config.local.js   # Local overrides (gitignored)
 ├── .env              # Environment variables (gitignored)
-└── package.json
+├── package.json
+└── tests/            # Test files (Jest)
 ```
 
 ## Example: TikTok Video Analysis Workflow
@@ -102,6 +103,26 @@ node index.js
 - **Add new commands:** Place in `commands/` and reference in your workflow.
 - **Add new services:** Place in `services/` and configure in `config.js`.
 - **Change workflow:** Edit `index.js` to define your own steps, triggers, and logic.
+
+## Testing
+
+This project uses [Jest](https://jestjs.io/) for testing.
+
+To run all tests:
+
+```bash
+npm test
+```
+
+To check code coverage:
+
+```bash
+npm run test:coverage
+```
+
+A detailed HTML report will be generated in the `coverage/` directory. Open `coverage/lcov-report/index.html` in your browser to view it.
+
+Test files are located in the `tests/` directory or can be placed alongside modules using the `.test.js` suffix.
 
 ## License
 
