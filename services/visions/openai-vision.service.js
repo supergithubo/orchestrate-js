@@ -8,6 +8,8 @@ const storageService = require("../storage.service");
 
 const APIKEY = config.openai.apiKey;
 const MODEL = config.openai.vision.models;
+const FRAME_EXT = config.openai.vision.frameExt;
+const PROMPT = config.openai.vision.prompt;
 
 const openai = new OpenAI({
   apiKey: APIKEY,
@@ -37,10 +39,7 @@ async function analyzeFrames(frames = [], additionalContext = null) {
   }
   const promptText = [
     contextParts.length ? `Context:\n${contextParts.join("\n")}\n` : "",
-    "Describe what is happening in these video frames in sequence. " +
-      "Do not use numbering or labels like 'Frame 1'. " +
-      "Prefix each frame's description with '~' and put each on a new line. " +
-      "Do not include any other text before or after the list.",
+    PROMPT,
   ].join("\n");
   const allResponses = [];
   for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
@@ -53,7 +52,7 @@ async function analyzeFrames(frames = [], additionalContext = null) {
         return {
           type: "image_url",
           image_url: {
-            url: `data:image/jpeg;base64,${base64}`,
+            url: `data:image/${FRAME_EXT};base64,${base64}`,
           },
         };
       })

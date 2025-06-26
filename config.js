@@ -25,6 +25,12 @@ const baseConfig = {
     },
     vision: {
       model: "gpt-4o",
+      frameExt: "jpeg",
+      prompt:
+        "Describe what is happening in these video frames in sequence. " +
+        "Do not use numbering or labels like 'Frame 1'. " +
+        "Prefix each frame's description with '~' and put each on a new line. " +
+        "Do not include any other text before or after the list.",
     },
     transcription: {
       model: "whisper-1",
