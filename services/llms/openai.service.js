@@ -5,7 +5,7 @@ const { OpenAI } = require("openai");
 const config = require("../../config");
 
 const APIKEY = config.openai.apiKey;
-const MODEL = config.openai.models.llm;
+const MODEL = config.openai.llm.model;
 
 const openai = new OpenAI({
   apiKey: APIKEY,

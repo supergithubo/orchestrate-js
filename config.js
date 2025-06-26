@@ -20,10 +20,14 @@ const baseConfig = {
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
-    models: {
-      llm: "gpt-4o",
-      vision: "gpt-4o",
-      transcription: "whisper-1",
+    llm: {
+      model: "gpt-4o",
+    },
+    vision: {
+      model: "gpt-4o",
+    },
+    transcription: {
+      model: "whisper-1",
     },
   },
   rapidapi: {

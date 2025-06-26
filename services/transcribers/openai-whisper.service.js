@@ -8,7 +8,7 @@ const config = require("../../config");
 const storageService = require("../storage.service");
 
 const APIKEY = config.openai.apiKey;
-const MODEL = config.openai.models.transcription;
+const MODEL = config.openai.transcription.model;
 
 if (typeof globalThis.File === "undefined") {
   globalThis.File = File;

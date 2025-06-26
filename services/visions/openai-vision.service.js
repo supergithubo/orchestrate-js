@@ -7,7 +7,7 @@ const config = require("../../config");
 const storageService = require("../storage.service");
 
 const APIKEY = config.openai.apiKey;
-const MODEL = config.openai.models.vision;
+const MODEL = config.openai.vision.models;
 
 const openai = new OpenAI({
   apiKey: APIKEY,
