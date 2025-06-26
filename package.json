@@ -1,5 +1,5 @@
 {
-  "name": "orchestratejs",
+  "name": "orchestrate-js",
   "version": "alpha-1.0.0",
   "description": "Developer-focused workflow automation/orchestration framework. Define, run, and extend complex multi-step workflows in code.",
   "main": "index.js",
