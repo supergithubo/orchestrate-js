@@ -7,6 +7,8 @@
  */
 const path = require("path");
 
+const logger = require("./services/logger.service");
+
 function checkDuplicateReturns(workflow) {
   const seen = new Set();
   const duplicates = new Set();
@@ -109,8 +111,20 @@ async function runStep(step, context) {
 async function runWorkflow(workflow, initialContext = {}) {
   checkDuplicateReturns(workflow);
   const context = { ...initialContext };
+  let idx = 0;
   for (const step of workflow) {
+    logger.log(
+      "info",
+      `workflow-${idx + 1}`,
+      `type`,
+      step.type,
+      `command/s:`,
+      step.type == "series"
+        ? step.command
+        : step.commands.map((c) => c.command).join(", ")
+    );
     await runStep(step, context);
+    idx++;
   }
   return context;
 }

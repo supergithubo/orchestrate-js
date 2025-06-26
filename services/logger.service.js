@@ -26,9 +26,38 @@ function log(level = "info", ...args) {
     default:
       levelTag = chalk.white(level.toUpperCase());
   }
-  const formatted = args.map((arg) =>
-    typeof arg === "object" ? JSON.stringify(arg, null, 2) : String(arg)
-  );
+  const formatted = args.map((arg, index) => {
+    switch (args.length) {
+      case 1:
+        return chalk.white(arg);
+      case 2:
+        return index === 0 ? chalk.cyan(arg) : chalk.white(arg);
+      case 3:
+        return index === 0
+          ? chalk.cyan(arg)
+          : index === 1
+          ? chalk.yellow(arg)
+          : chalk.white(arg);
+      case 4:
+        return index === 0
+          ? chalk.cyan(arg)
+          : index === 1
+          ? chalk.yellow(arg)
+          : index === 2
+          ? chalk.white(arg)
+          : chalk.gray(arg);
+      default:
+        return index === 0
+          ? chalk.gray(arg)
+          : index === 1
+          ? chalk.white(arg)
+          : index === 2
+          ? chalk.gray(arg)
+          : index === 3
+          ? chalk.white(arg)
+          : chalk.gray(arg);
+    }
+  });
   console.log(`${timestamp} [${levelTag}] ${formatted.join(" ")}`);
 }
 
