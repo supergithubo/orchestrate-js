@@ -1,5 +1,14 @@
+/**
+ * Main Entry Point
+ *
+ * This file defines the workflow for processing a TikTok video, including download, transcription, frame extraction, analysis, and concept generation.
+ * It loads configuration, sets up the workflow steps, and runs the workflow using the runner module.
+ *
+ * Usage: node index.js
+ */
 const config = require("./config");
 const runWorkflow = require("./runner");
+const logger = require("./services/logger.service");
 
 const workflow = [
   {
@@ -61,12 +70,14 @@ const workflow = [
 
 (async () => {
   try {
+    logger.log("info", "Starting workflow...");
     const result = await runWorkflow(workflow, { config });
-    console.log(
+    logger.log(
+      "info",
       "\n✅ Workflow completed with result:\n",
       result.concepts || result
     );
   } catch (err) {
-    console.error("❌ Error in workflow:", err);
+    logger.logError("Error in workflow:", err);
   }
 })();

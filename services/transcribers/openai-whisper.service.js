@@ -18,6 +18,11 @@ const openai = new OpenAI({
   apiKey: APIKEY,
 });
 
+/**
+ * Get an audio transcription using OpenAI Whisper.
+ * @param {string} filePath - Path to the audio file
+ * @returns {Promise<{text: string, metadata: object}>} Transcription and metadata
+ */
 async function getAudioTranscription(filePath) {
   const stream = storageService.getFileStream(filePath);
   const response = await openai.audio.transcriptions.create({

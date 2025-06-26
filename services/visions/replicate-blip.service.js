@@ -1,4 +1,4 @@
-// services/vision/replicate-blip.service.js
+// services/visions/replicate-blip.service.js
 
 const fs = require("fs");
 const path = require("path");

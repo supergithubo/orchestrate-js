@@ -1,11 +1,9 @@
-// services/vision/openai-vision.service.js
+// services/visions/openai-vision.service.js
 
 const fs = require("fs");
 const path = require("path");
 const { OpenAI } = require("openai");
-
 const config = require("../../config");
-
 const storageService = require("../storage.service");
 
 const APIKEY = config.openai.apiKey;
@@ -15,26 +13,28 @@ const openai = new OpenAI({
   apiKey: APIKEY,
 });
 
+/**
+ * Analyze video frames using OpenAI's vision model.
+ * @param {string[]} frames - Array of frame file paths
+ * @param {object|null} additionalContext - Additional context for the prompt
+ * @returns {Promise<string>} Description of frames
+ */
 async function analyzeFrames(frames = [], additionalContext = null) {
   const MAX_IMAGES_PER_BATCH = 5;
   const batches = [];
-
   for (let i = 0; i < frames.length; i += MAX_IMAGES_PER_BATCH) {
     batches.push(frames.slice(i, i + MAX_IMAGES_PER_BATCH));
   }
-
   const contextParts = [];
   if (additionalContext?.description) {
     contextParts.push(`Description: "${additionalContext.description}"`);
   }
-
   if (
     Array.isArray(additionalContext?.hashtags) &&
     additionalContext.hashtags.length
   ) {
     contextParts.push(`Hashtags: ${additionalContext.hashtags.join(", ")}`);
   }
-
   const promptText = [
     contextParts.length ? `Context:\n${contextParts.join("\n")}\n` : "",
     "Describe what is happening in these video frames in sequence. " +
@@ -42,17 +42,14 @@ async function analyzeFrames(frames = [], additionalContext = null) {
       "Prefix each frame's description with '~' and put each on a new line. " +
       "Do not include any other text before or after the list.",
   ].join("\n");
-
   const allResponses = [];
   for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
     const frameBatch = batches[batchIndex];
-
     const images = await Promise.all(
       frameBatch.map(async (framePath) => {
         const stream = storageService.getFileStream(framePath);
         const buffer = await storageService.getStreamBuffer(stream);
         const base64 = buffer.toString("base64");
-
         return {
           type: "image_url",
           image_url: {
@@ -61,22 +58,18 @@ async function analyzeFrames(frames = [], additionalContext = null) {
         };
       })
     );
-
     const messages = [
       {
         role: "user",
         content: [{ type: "text", text: promptText }, ...images],
       },
     ];
-
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages,
     });
-
     allResponses.push(`${response.choices[0].message.content}`);
   }
-
   return allResponses.join("\n\n");
 }
 

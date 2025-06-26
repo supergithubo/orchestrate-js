@@ -1,3 +1,10 @@
+/**
+ * Workflow Runner
+ *
+ * This module provides functions to execute a workflow composed of 'series' and 'parallel' steps.
+ * Each step references a command in the 'commands/' directory and passes parameters and collects results in a shared context.
+ * Used by index.js to orchestrate the main workflow.
+ */
 const path = require("path");
 
 function checkDuplicateReturns(workflow) {
@@ -93,15 +100,18 @@ async function runStep(step, context) {
   }
 }
 
+/**
+ * Runs a workflow definition, executing each step in order and collecting results in context.
+ * @param {Array<object>} workflow - The workflow definition (array of steps)
+ * @param {object} [initialContext={}] - Initial context to pass to the workflow
+ * @returns {Promise<object>} The final context after running the workflow
+ */
 async function runWorkflow(workflow, initialContext = {}) {
   checkDuplicateReturns(workflow);
-
   const context = { ...initialContext };
-
   for (const step of workflow) {
     await runStep(step, context);
   }
-
   return context;
 }
 

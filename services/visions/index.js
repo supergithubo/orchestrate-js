@@ -1,4 +1,4 @@
-// services/vision/index.js
+// services/visions/index.js
 
 const config = require("../../config");
 const key = config.app.services.vision || "openai-vision";

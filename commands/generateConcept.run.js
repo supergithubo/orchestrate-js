@@ -1,6 +1,11 @@
 const logger = require("../services/logger.service");
 const llmService = require("../services/llms");
 
+/**
+ * Generates content concepts based on transcript, metadata, and frame descriptions using the configured LLM service.
+ * @param {{ transcript: string, metadata: object, frameDescriptions: any }} params - Transcript, metadata, and frame descriptions
+ * @returns {Promise<{ concepts: any }>} The generated content concepts
+ */
 module.exports = async function ({ transcript, metadata, frameDescriptions }) {
   const { name, getChatResponse } = llmService;
 
@@ -20,7 +25,7 @@ module.exports = async function ({ transcript, metadata, frameDescriptions }) {
     },
   ];
 
-  logger.log("language", name, "Generating content concepts...");
+  logger.log("info", "language", name, "Generating content concepts...");
   const concepts = await getChatResponse(messages);
 
   return { concepts };
