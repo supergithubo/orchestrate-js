@@ -16,6 +16,9 @@ const baseConfig = {
       extractor: "ffmpeg-frame",
       vision: "openai-vision",
       transcriber: "openai-whisper",
+      generators: {
+        image: "openai-image",
+      },
     },
   },
   openai: {
@@ -34,6 +37,9 @@ const baseConfig = {
     },
     transcription: {
       model: "whisper-1",
+    },
+    image: {
+      model: "gpt-4.1-mini",
     },
   },
   rapidapi: {
