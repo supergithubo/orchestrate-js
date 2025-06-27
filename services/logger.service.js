@@ -68,6 +68,7 @@ function log(level = "info", ...args) {
  */
 function logError(error, ...context) {
   const timestamp = chalk.gray(`[${new Date().toISOString()}]`);
+  console.log(error)
   let message = error instanceof Error ? error.stack || error.message : error;
   if (context.length) {
     message +=

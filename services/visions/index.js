@@ -1,20 +1,17 @@
 // services/visions/index.js
 
-const config = require("../../config");
-const key = config.app.services.vision || "openai-vision";
+module.exports = (serviceKey) => {
+  let service;
 
-let service;
+  try {
+    service = require(`./${serviceKey}.service.js`);
 
-try {
-  service = require(`./${key}.service.js`);
-  if (typeof service.analyzeFrames !== "function") {
-    throw new Error(`Vision module '${key}' must export 'analyzeFrames'`);
+    if (typeof service.analyzeImages !== "function") {
+      throw new Error(`Module '${serviceKey}' must export 'analyzeImages'`);
+    }
+  } catch (err) {
+    throw new Error(`Vision "${serviceKey}" failed to load: ${err.message}`);
   }
-  if (typeof service.name !== "string") {
-    throw new Error(`Module '${key}' must export 'name'`);
-  }
-} catch (err) {
-  throw new Error(`Vision "${key}" failed to load: ${err.message}`);
-}
 
-module.exports = service;
+  return service;
+};

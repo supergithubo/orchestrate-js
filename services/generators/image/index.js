@@ -1,21 +1,19 @@
 // services/generators/image/index.js
 
-const config = require("../../../config");
-const key = config.app.services.generators.image || "openai-image";
+module.exports = (serviceKey) => {
+  let service;
 
-let service;
+  try {
+    service = require(`./${serviceKey}.service.js`);
 
-try {
-  service = require(`./${key}.service.js`);
-
-  if (typeof service.generateImage !== "function") {
-    throw new Error(`Module '${key}' must export 'generateImage'`);
+    if (typeof service.getImageResponse !== "function") {
+      throw new Error(`Module '${serviceKey}' must export 'getImageResponse'`);
+    }
+  } catch (err) {
+    throw new Error(
+      `Image Generator "${serviceKey}" failed to load: ${err.message}`
+    );
   }
-  if (typeof service.name !== "string") {
-    throw new Error(`Module '${key}' must export 'name'`);
-  }
-} catch (err) {
-  throw new Error(`Image generator "${key}" failed to load: ${err.message}`);
-}
 
-module.exports = service;
+  return service;
+};

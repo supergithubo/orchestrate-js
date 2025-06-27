@@ -2,29 +2,36 @@
 
 const { OpenAI } = require("openai");
 
-const config = require("../../config");
-
-const APIKEY = config.openai.apiKey;
-const MODEL = config.openai.llm.model;
-
-const openai = new OpenAI({
-  apiKey: APIKEY,
-});
+let model = "gpt-4o-mini";
 
 /**
- * Get a chat response from OpenAI's LLM.
- * @param {Array<object>} messages - Array of chat messages
- * @returns {Promise<string>} The response content
+ * Get a response from OpenAI using the Responses API.
+ *
+ * @param {object} opts - Full OpenAI request payload (must include `apiKey`; others per API spec)
+ * @param {string} opts.apiKey - OpenAI API key (required; stripped before sending)
+ * @see https://platform.openai.com/docs/api-reference/responses/create for all valid `opts` fields
+ *
+ * @returns {Promise<string>} The generated response text
+ * @throws {Error} If `apiKey` is missing
  */
-async function getChatResponse(messages) {
-  const response = await openai.chat.completions.create({
-    model: MODEL,
-    messages: messages,
-  });
-  return response.choices[0].message.content;
+async function getReponse(opts = {}) {
+  if (!opts.apiKey) throw new Error(`'apiKey' is required`);
+
+  opts.model = opts.model || model;
+  model = opts.model;
+
+  const { apiKey, ...rawPayload } = opts;
+
+  const payload = Object.fromEntries(
+    Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
+  );
+
+  const client = new OpenAI({ apiKey });
+  const response = await client.responses.create(payload);
+
+  return response.output_text;
 }
 
 module.exports = {
-  getChatResponse,
-  name: `open-ai-${MODEL}`,
+  getReponse,
 };

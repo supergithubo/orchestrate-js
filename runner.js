@@ -55,15 +55,40 @@ function checkDuplicateReturns(workflow) {
 }
 
 async function runSeries(step, context) {
-  const { command, params, returns } = step;
+  const { command, params } = step;
   const commandPath = path.join(__dirname, "commands", `${command}.run.js`);
   const commandFn = require(commandPath);
   const resolvedParams =
     typeof params === "function" ? params(context) : params;
 
-  const result = await commandFn(resolvedParams);
+  return await commandFn(resolvedParams);
+}
 
-  if (returns) {
+async function runParallel(step, context) {
+  const results = await Promise.all(
+    step.commands.map((subStep) => runStep(subStep, context))
+  );
+
+  return results.flat();
+}
+
+async function runStep(step, context) {
+  const { returns, returnsAlias } = step;
+
+  let result;
+  if (step.type === "series") {
+    result = await runSeries(step, context);
+  } else if (step.type === "parallel") {
+    result = await runParallel(step, context);
+  } else {
+    throw new Error(`Unknown step type: ${step.type}`);
+  }
+
+  if (returnsAlias && typeof returnsAlias === "object") {
+    for (const [from, to] of Object.entries(returnsAlias)) {
+      context[to] = result[from];
+    }
+  } else if (returns) {
     if (Array.isArray(returns)) {
       returns.forEach((key, i) => {
         context[key] = result[key] ?? result[i];
@@ -74,32 +99,6 @@ async function runSeries(step, context) {
   }
 
   return result;
-}
-
-async function runParallel(step, context) {
-  const results = await Promise.all(
-    step.commands.map((subStep) => runStep(subStep, context))
-  );
-
-  results.forEach((res) => {
-    if (res && typeof res === "object") {
-      Object.entries(res).forEach(([key, value]) => {
-        context[key] = value;
-      });
-    }
-  });
-
-  return results;
-}
-
-async function runStep(step, context) {
-  if (step.type === "series") {
-    return await runSeries(step, context);
-  } else if (step.type === "parallel") {
-    return await runParallel(step, context);
-  } else {
-    throw new Error(`Unknown step type: ${step.type}`);
-  }
 }
 
 /**

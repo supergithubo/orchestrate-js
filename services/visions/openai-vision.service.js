@@ -1,78 +1,83 @@
 // services/visions/openai-vision.service.js
 
 const fs = require("fs");
-const path = require("path");
 const { OpenAI } = require("openai");
-const config = require("../../config");
-const storageService = require("../storage.service");
 
-const APIKEY = config.openai.apiKey;
-const MODEL = config.openai.vision.model;
-const FRAME_EXT = config.openai.vision.frameExt;
-const PROMPT = config.openai.vision.prompt;
-
-const openai = new OpenAI({
-  apiKey: APIKEY,
-});
+let model = "gpt-4o";
 
 /**
- * Analyze video frames using OpenAI's vision model.
- * @param {string[]} frames - Array of frame file paths
- * @param {object|null} additionalContext - Additional context for the prompt
- * @returns {Promise<string>} Description of frames
+ * Analyze images using OpenAI vision via chat completion.
+ *
+ * @param {Array<string|Buffer>} images - Array of image paths or buffers (required)
+ * @param {object} opts - Full OpenAI request payload (must include `apiKey`; others per API spec)
+ * @param {string} opts.apiKey - OpenAI API key (required; stripped before sending)
+ * @param {string} opts.model - OpenAI model (e.g., gpt-4o) (defaults to gpt-4o)
+ * @param {Array<object>} opts.messages - Message to prepend (instructions) before image content
+ * @see https://platform.openai.com/docs/api-reference/chat/createe for all valid `opts` fields
+ *
+ * @returns {Promise<string[]>} An array of model responses (batched if too many images)
+ * @throws {Error} If required parameters are missing or invalid
  */
-async function analyzeFrames(frames = [], additionalContext = null) {
-  const MAX_IMAGES_PER_BATCH = 5;
+async function analyzeImages(images, opts = {}) {
+  if (!Array.isArray(images) || images.length === 0) {
+    throw new Error(`'images' must be a non-empty array`);
+  }
+
+  if (!opts.apiKey) throw new Error(`'apiKey' is required`);
+  if (!opts.message) throw new Error(`'message' is required`);
+
+  opts.model = opts.model || model;
+  model = opts.model;
+
+  const { apiKey, message, ...rawPayload } = opts;
+
+  const payload = Object.fromEntries(
+    Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
+  );
+
+  const client = new OpenAI({ apiKey });
+
+  const toImagePart = (img) => ({
+    type: "image_url",
+    image_url: {
+      url: `data:image/jpeg;base64,${
+        Buffer.isBuffer(img)
+          ? img.toString("base64")
+          : fs.readFileSync(img).toString("base64")
+      }`,
+    },
+  });
+
   const batches = [];
-  for (let i = 0; i < frames.length; i += MAX_IMAGES_PER_BATCH) {
-    batches.push(frames.slice(i, i + MAX_IMAGES_PER_BATCH));
+  for (let i = 0; i < images.length; i += 5) {
+    batches.push(images.slice(i, i + 5));
   }
-  const contextParts = [];
-  if (additionalContext?.description) {
-    contextParts.push(`Description: "${additionalContext.description}"`);
-  }
-  if (
-    Array.isArray(additionalContext?.hashtags) &&
-    additionalContext.hashtags.length
-  ) {
-    contextParts.push(`Hashtags: ${additionalContext.hashtags.join(", ")}`);
-  }
-  const promptText = [
-    contextParts.length ? `Context:\n${contextParts.join("\n")}\n` : "",
-    PROMPT,
-  ].join("\n");
-  const allResponses = [];
-  for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-    const frameBatch = batches[batchIndex];
-    const images = await Promise.all(
-      frameBatch.map(async (framePath) => {
-        const stream = storageService.getFileStream(framePath);
-        const buffer = await storageService.getStreamBuffer(stream);
-        const base64 = buffer.toString("base64");
-        return {
-          type: "image_url",
-          image_url: {
-            url: `data:image/${FRAME_EXT};base64,${base64}`,
-          },
-        };
-      })
-    );
-    const messages = [
-      {
-        role: "user",
-        content: [{ type: "text", text: promptText }, ...images],
-      },
+
+  const results = [];
+
+  for (const batch of batches) {
+    const messageContent = [
+      { type: "text", text: message },
+      ...batch.map(toImagePart),
     ];
-    const response = await openai.chat.completions.create({
-      model: MODEL,
-      messages,
+
+    const response = await client.chat.completions.create({
+      ...payload,
+      messages: [
+        {
+          role: "user",
+          content: messageContent,
+        },
+      ],
     });
-    allResponses.push(`${response.choices[0].message.content}`);
+
+    const content = response.choices?.[0]?.message?.content;
+    if (content) results.push(content);
   }
-  return allResponses.join("\n\n");
+
+  return results;
 }
 
 module.exports = {
-  name: `open-ai-vision-${MODEL}`,
-  analyzeFrames,
+  analyzeImages,
 };
