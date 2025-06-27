@@ -1,6 +1,6 @@
 # OrchestrateJS
 
-OrchestrateJS is a **developer-focused workflow automation/orchestration framework** inspired by tools like [n8n](https://n8n.io/), but designed for maximum flexibility and power through code. It enables you to define, run, and extend complex multi-step workflows that connect APIs, AI models, and custom logic—using modular, pluggable commands and services.
+OrchestrateJS is a **developer-focused workflow automation/orchestration framework** designed for maximum flexibility and power through code. It enables you to define, run, and extend complex multi-step workflows that connect APIs, AI models, and custom logic—using modular, pluggable commands and services.
 
 ## How It Works
 
@@ -184,8 +184,32 @@ Below is an example workflow (see `index.js`) that:
 
 1. **Edit `index.js`**: Change, add, or remove steps to fit your use case.
 2. **Add new commands**: Create a new file in `commands/` and reference it in your workflow.
-3. **Use services**: Integrate new APIs or logic by adding to `services/` and using them in your commands.
-4. **Pass data**: Use the context object to pass data/results between steps.
+3. **Use services**: Integrate new APIs or logic by adding to `services/` and using them in your commands (feel free to contribute other services—APIs, LLMs, agents, etc.—by adding them to the `services/` directory).
+4. **Pass data**: Use the context object (config file) to pass data/results between steps.
+
+### Existing Services
+
+The following services are currently available in the `services/` directory:
+
+- **Downloaders** (`services/downloaders/`):
+  - `rapidapi-tiktok.service.js` — Download TikTok videos via RapidAPI
+
+- **Transcribers** (`services/transcribers/`):
+  - `openai-whisper.service.js` — Audio transcription using OpenAI Whisper
+
+- **Extractors** (`services/extractors/`):
+  - `ffmpeg-frame.service.js` — Extract video frames using ffmpeg
+
+- **LLMs** (`services/llms/`):
+  - `openai.service.js` — Chat/completion with OpenAI LLMs
+
+- **Vision Services** (`services/visions/`):
+  - `openai-vision.service.js` — Frame analysis using OpenAI Vision
+  - `replicate-blip.service.js` — Frame analysis using Replicate BLIP
+
+- **Other Core Services**:
+  - `storage.service.js` — File and stream storage utilities
+  - `logger.service.js` — Logging utilities
 
 ### Running Your Workflow
 
