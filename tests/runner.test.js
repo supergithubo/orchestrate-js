@@ -1,3 +1,7 @@
+jest.mock("../services/logger.service", () => ({
+  log: jest.fn(),
+}));
+
 const runWorkflow = require("../runner");
 const path = require("path");
 

@@ -121,7 +121,9 @@ async function runWorkflow(workflow, initialContext = {}) {
       `command/s:`,
       step.type == "series"
         ? step.command
-        : step.commands.map((c) => c.command).join(", ")
+        : step.type == "parallel"
+        ? step.commands.map((c) => c.command).join(", ")
+        : `unknown`
     );
     await runStep(step, context);
     idx++;
