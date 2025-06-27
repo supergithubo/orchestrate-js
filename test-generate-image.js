@@ -16,12 +16,7 @@ const workflow = [
     command: "generateImage",
     params: (context) => ({
       prompt:
-        "Create image which centers around a visually striking and intriguing mukbang featuring a unique type of candy known as 'Lava Candies'. " +
-        "These confections are characterized by their black exterior with luminous orange-red cracks resembling molten lava. Throughout the image, " +
-        "the person showcases several types of these candies—spherical, star-shaped, and pyramid-shaped—creating a visually appealing and immersive ASMR experience." +
-        "The individual bites into these candies, revealing their stretchy, molten-like interior, which is both satisfyingly gooey and visually mesmerizing. The image" + 
-        "plays on the themes of 'oddly satisfying' and 'ASMR,' aiming to captivate viewers with its unique textures and visually stimulating content." +
-        "",
+        "Create a visually striking image of a mukbang with unusual 'Lava Candies'. These candies have a black exterior with glowing orange-red cracks, like molten lava. Show various shapes—spheres, stars, pyramids—and emphasize their gooey, stretchy interior when bitten. The image should feel satisfying and ASMR-like, focusing on textures and visual appeal.",
     }),
     returns: ["images"],
   },
@@ -31,7 +26,7 @@ const workflow = [
   try {
     logger.log("info", "Starting workflow...");
     const result = await runWorkflow(workflow, { config });
-    logger.log("info", result);
+    console.log(result)
   } catch (err) {
     logger.logError("Error in workflow:", err);
   }

@@ -17,7 +17,7 @@ const baseConfig = {
       vision: "openai-vision",
       transcriber: "openai-whisper",
       generators: {
-        image: "openai-image",
+        image: "openai-dall-e",
       },
     },
   },
@@ -39,7 +39,7 @@ const baseConfig = {
       model: "whisper-1",
     },
     image: {
-      model: "gpt-4.1-mini",
+      model: "dall-e-3",
     },
   },
   rapidapi: {
