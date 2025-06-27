@@ -4,7 +4,7 @@ OrchestrateJS is a **developer-focused workflow automation/orchestration framewo
 
 ## How It Works
 
-- **Workflows** are defined as arrays of steps (series/parallel) in code (see `index.js`).
+- **Workflows** are defined as arrays of steps (series/parallel) in code (see `index.js` as initial example).
 - **Commands** implement each step (in `commands/`).
 - **Services** provide modular integrations (APIs, AI, storage, etc.).
 - **Runner** executes the workflow, passing context/results between steps.
@@ -98,11 +98,102 @@ Run any workflow by editing `index.js` and then:
 node index.js
 ```
 
-## Customization & Extending
+## Defining and Customizing Workflows
 
-- **Add new commands:** Place in `commands/` and reference in your workflow.
-- **Add new services:** Place in `services/` and configure in `config.js`.
-- **Change workflow:** Edit `index.js` to define your own steps, triggers, and logic.
+Workflows in OrchestrateJS are defined as arrays of steps, which can be run in series or in parallel. Each step specifies:
+
+- `type`: `"series"` or `"parallel"`
+- `command`: The command to run (for series steps)
+- `commands`: An array of steps (for parallel steps)
+- `params`: A function that receives the current context and returns parameters for the command
+- `returns`: Which values from the command's result to add to the context
+
+### Example Workflow
+
+Below is an example workflow (see `index.js`) that:
+
+1. Downloads a TikTok video
+2. Transcribes its audio and extracts frames in parallel
+3. Analyzes the frames
+4. Generates new content concepts
+
+```js
+[
+  {
+    type: "series",
+    command: "downloadTiktokVideo",
+    params: (context) => ({
+      videoUrl: context.config.app.videoUrl,
+      outputFile: context.config.app.outputFile,
+    }),
+    returns: ["filePath", "metadata"],
+  },
+  {
+    type: "parallel",
+    commands: [
+      {
+        type: "series",
+        command: "transcribeVideo",
+        params: (context) => ({
+          filePath: context.filePath,
+          opts: { saveFile: context.config.app.saveTranscription },
+        }),
+        returns: ["transcription"],
+      },
+      {
+        type: "series",
+        command: "extractFrames",
+        params: (context) => ({
+          filePath: context.filePath,
+        }),
+        returns: ["frames"],
+      },
+    ],
+  },
+  {
+    type: "series",
+    command: "analyzeFrames",
+    params: (context) => ({
+      frames: context.frames,
+      metadata: context.metadata,
+      opts: { saveFile: context.config.app.saveAnalysis },
+    }),
+    returns: ["frameDescriptions"],
+  },
+  {
+    type: "series",
+    command: "generateConcept",
+    params: (context) => ({
+      transcript: context.transcription,
+      metadata: context.metadata,
+      frameDescriptions: context.frameDescriptions,
+    }),
+    returns: ["concepts"],
+  },
+]
+```
+
+#### How It Works
+
+- **Series steps** run one after another, passing results to the next step.
+- **Parallel steps** run multiple commands at the same time, merging their results into the context.
+- The `params` function lets you dynamically build parameters using the current context (results from previous steps).
+- The `returns` array specifies which keys from the command's result should be added to the context for use in later steps.
+
+### Customizing Your Workflow
+
+1. **Edit `index.js`**: Change, add, or remove steps to fit your use case.
+2. **Add new commands**: Create a new file in `commands/` and reference it in your workflow.
+3. **Use services**: Integrate new APIs or logic by adding to `services/` and using them in your commands.
+4. **Pass data**: Use the context object to pass data/results between steps.
+
+### Running Your Workflow
+
+After editing your workflow in `index.js`, run:
+
+```bash
+node index.js
+```
 
 ## Testing
 
