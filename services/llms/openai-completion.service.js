@@ -1,7 +1,7 @@
 // services/llms/openai-completion.service.js
 
 const { OpenAI } = require("openai");
-const utils = require("../../utils.service");
+const utils = require("../utils.service");
 
 const DEFAULT_MODEL = "gpt-4o-mini";
 
