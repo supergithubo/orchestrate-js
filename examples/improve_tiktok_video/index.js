@@ -1,6 +1,8 @@
 const path = require("path");
+
 require("dotenv").config();
 
+const config = require("../../config");
 const runWorkflow = require("../../runner");
 const logger = require("../../services/logger.service");
 
@@ -10,7 +12,9 @@ const workflow = [
     command: "downloadVideos",
     params: {
       service: "rapidapi-tiktok",
-      urls: ["https://www.tiktok.com/@asmraiworks/video/7517745929076657438"],
+      urls: [
+        "https://www.tiktok.com/@aigenerationd1z/video/7489079990118599958",
+      ],
       outputDir: path.resolve(__dirname, "../../tmp"),
       opts: {
         apiKey: process.env.RAPIDAPI_KEY,
@@ -20,20 +24,85 @@ const workflow = [
     returns: ["videoPaths"],
   },
   {
-    type: "series",
-    command: "extractFrames",
-    params: (context) => ({
-      service: "ffmpeg-frame",
-      videoPath: context.videoPaths[0],
-      outputDir: path.resolve(__dirname, "../../tmp"),
-      opts: {
-        frameLimit: 10,
-        ffmpegBin: "C:\\ffmpeg\\bin\\ffmpeg.exe",
-        ffprobeBin: "C:\\ffmpeg\\bin\\ffprobe.exe",
+    type: "parallel",
+    commands: [
+      {
+        type: "series",
+        command: "extractFrames",
+        params: (context) => ({
+          service: "ffmpeg-frame",
+          videoPath: context.videoPaths[0],
+          outputDir: path.resolve(__dirname, "../../tmp"),
+          opts: {
+            frameLimit: 5,
+            ffmpegBin: config.app.ffmpegBin,
+            ffprobeBin: config.app.ffprobeBin,
+          },
+          name: "ffmpeg-frame",
+        }),
+        returns: ["framePaths"],
       },
-      name: "ffmpeg-frame",
+      {
+        type: "series",
+        command: "transcribeAudio",
+        params: (context) => ({
+          service: "openai-whisper",
+          file: context.videoPaths[0],
+          opts: {
+            apiKey: process.env.OPENAI_API_KEY,
+            model: "whisper-1",
+          },
+          name: "openai-whisper",
+        }),
+        returns: ["transcription"], 
+      },
+    ],
+  },
+  {
+    type: "series",
+    command: "analyzeImages",
+    params: (context) => ({
+      service: "openai-vision",
+      images: context.framePaths,
+      opts: {
+        apiKey: process.env.OPENAI_API_KEY,
+        model: "gpt-4o",
+        message:
+          "Describe what is happening in these video frames in sequence. " +
+          "Do not use numbering or labels like 'Frame 1'. " +
+          "Prefix each frame's description with '~' and put each on a new line. " +
+          "Do not include any other text before or after the list.",
+      },
+      name: "openai-vision-gpt-4o",
     }),
-    returns: ["framePaths"],
+    returnsAlias: { analysis: "frameAnalysis" },
+  },
+  {
+    type: "series",
+    command: "generateResponse",
+    params: (context) => ({
+      service: "openai-completion",
+      opts: {
+        apiKey: process.env.OPENAI_API_KEY,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an expert content strategist for short-form videos.",
+          },
+          {
+            role: "user",
+            content:
+              `Here is the transcript of a TikTok video:\n\n${context.transcription}\n\n` +
+              `Visual analysis of the frames:\n${context.frameAnalysis}\n\n` +
+              `Based on this, summarize the narrative and suggest 3 alternative but related concepts that could perform well.`,
+          },
+        ],
+        model: "gpt-4o",
+      },
+      name: "openai-completion-gpt-4o",
+    }),
+    returnsAlias: { response: "suggestion" },
   },
 ];
 

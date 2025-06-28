@@ -2,6 +2,25 @@ require("dotenv").config();
 
 const baseConfig = {
   app: {
+    ffmpegBin: "C:\\ffmpeg\\bin\\ffmpeg.exe",
+    ffprobeBin: "C:\\ffmpeg\\bin\\ffprobe.exe",
+    defaults: {
+      llm: "openai-response",
+      vision: "openai-vision",
+      generators: {
+        image: "openai-image",
+      },
+      extractors: {
+        frame: "ffmpeg-frame",
+        transcription: "openai-whisper",
+      },
+      downloaders: {
+        image: "http-download",
+        video: "rapidapi-tiktok",
+      },
+    },
+  },
+  x: {
     videoUrl: "https://www.tiktok.com/@asmraiworks/video/7517745929076657438",
     outputFile: {
       prefix: "tiktok_video_",

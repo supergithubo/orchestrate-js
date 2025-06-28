@@ -12,8 +12,8 @@ let model = "gpt-4o";
  * @param {object} opts - Full OpenAI request payload (must include `apiKey`; others per API spec)
  * @param {string} opts.apiKey - OpenAI API key (required; stripped before sending)
  * @param {string} opts.model - OpenAI model (e.g., gpt-4o) (defaults to gpt-4o)
- * @param {Array<object>} opts.messages - Message to prepend (instructions) before image content
- * @see https://platform.openai.com/docs/api-reference/chat/createe for all valid `opts` fields
+ * @param {Array<object>} opts.messages - Message to prepend (instructions) before image content (required)
+ * @see https://platform.openai.com/docs/api-reference/chat/create for all valid `opts` fields
  *
  * @returns {Promise<string[]>} An array of model responses (batched if too many images)
  * @throws {Error} If required parameters are missing or invalid
