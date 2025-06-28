@@ -1,22 +1,38 @@
 # OrchestrateJS
 
-OrchestrateJS is a **developer-focused workflow automation/orchestration framework** designed for maximum flexibility and power through code. It enables you to define, run, and extend complex multi-step workflows that connect APIs, AI models, and custom logic—using modular, pluggable commands and services.
+OrchestrateJS is a **developer-first workflow automation/orchestration framework** for building powerful, flexible, and composable automations in code. It lets you define, run, and extend complex multi-step workflows that connect APIs, AI models, and custom logic—using modular, pluggable commands and services.
+
+## Key Features
+
+- **Code-First Workflows:** Define workflows as arrays of steps (series/parallel) in JavaScript for maximum flexibility and composability.
+- **Modular Commands:** Each step is implemented as a command in `commands/`, making it easy to add, swap, or extend capabilities.
+- **Service Integrations:** Plug in APIs, AI models, or custom services via a unified interface.
+- **Context-Aware Runner:** The runner executes workflows, passing results and context between steps for dynamic, data-driven automation.
+
+## Quick Start
+
+- Clone the repo and install dependencies (see Setup below).
+- Explore the [`examples/`](./examples) folder for ready-to-run workflows:
+  - **[prompt_to_model_comparison](./examples/prompt_to_model_comparison/README.md):** Automatically generate creative prompts and compare outputs from multiple AI image models.
+  - **[tiktok_video_enhancer](./examples/tiktok_video_enhancer/README.md):** Analyze, transcribe, and summarize TikTok videos using AI (download, extract frames, transcribe audio, analyze, summarize).
+- Use these as templates to build your own automations!
 
 ## How It Works
 
-- **Workflows** are defined as arrays of steps (series/parallel) in code (see [examples](https://github.com/supergithubo/orchestrate-js/blob/master/examples/README.md)).
-- **Commands** implement each step (in `commands/`).
-- **Services** provide modular integrations (APIs, AI, storage, etc.).
-- **Runner** executes the workflow, passing context/results between steps.
+- **Workflows:** Defined as arrays of steps (series/parallel) in code. See [`examples/`](./examples/) for real-world patterns.
+- **Commands:** Implement each step (in `commands/`).
+- **Services:** Provide modular integrations (APIs, AI, storage, etc.).
+- **Runner:** Executes the workflow, passing context/results between steps.
 
 ## Project Structure
 
 ```
 .
 ├── commands/         # Workflow step implementations (modular, pluggable)
-├── services/         # Modular service implementations (API, AI, storage, etc.)
-├── tmp/              # Temporary files (if needed by workflows)
-├── index.js          # Example workflow definition and entry point
+├── services/         # Modular service integrations (API, AI, storage, etc.)
+├── examples/         # Example workflows
+├── tmp/              # Temporary files (used by workflows)
+├── index.js          # Example workflow entry point
 ├── runner.js         # Workflow runner/orchestrator
 ├── config.js         # Global configuration
 ├── config.local.js   # Local overrides (gitignored)
@@ -117,100 +133,96 @@ Below is an example workflow (see `index.js`) that:
 [
   {
     type: "series",
-    command: "downloadVideos",
+    command: "generateResponse",
     params: {
-      service: "rapidapi-tiktok",
-      urls: [
-        "https://www.tiktok.com/@aigenerationd1z/video/7489079990118599958",
-      ],
-      outputDir: path.resolve(__dirname, "../../tmp"),
-      opts: {
-        apiKey: process.env.RAPIDAPI_KEY,
+      id: "openai-response-gpt-4o-mini",
+      services: { llm: "openai-response" },
+      params: {
+        opts: {
+          apiKey: process.env.OPENAI_API_KEY,
+          input: "Give me a creative image prompt about the sky.",
+          model: "gpt-4o-mini",
+        },
       },
-      name: "rapidapi-tiktok",
     },
-    returns: ["videoPaths"],
+    returnsAlias: { response: "prompt" },
   },
   {
     type: "parallel",
     commands: [
       {
         type: "series",
-        command: "extractFrames",
+        command: "generateImageResponse",
         params: (context) => ({
-          service: "ffmpeg-frame",
-          videoPath: context.videoPaths[0],
-          outputDir: path.resolve(__dirname, "../../tmp"),
-          opts: {
-            frameLimit: 5,
-            ffmpegBin: config.app.ffmpegBin,
-            ffprobeBin: config.app.ffprobeBin,
+          id: "openai-image-dall-e-3",
+          services: { imageGenerator: "openai-image" },
+          params: {
+            opts: {
+              apiKey: process.env.OPENAI_API_KEY,
+              prompt: context.prompt,
+              model: "dall-e-3",
+              size: "1024x1024",
+              response_format: "url",
+            },
           },
-          name: "ffmpeg-frame",
         }),
-        returns: ["framePaths"],
+        returnsAlias: { images: "dall-e-3" },
       },
       {
         type: "series",
-        command: "transcribeAudio",
+        command: "generateImageResponse",
         params: (context) => ({
-          service: "openai-whisper",
-          file: context.videoPaths[0],
-          opts: {
-            apiKey: process.env.OPENAI_API_KEY,
-            model: "whisper-1",
+          id: "openai-image-dall-e-2",
+          services: { imageGenerator: "openai-image" },
+          params: {
+            opts: {
+              apiKey: process.env.OPENAI_API_KEY,
+              prompt: context.prompt,
+              model: "dall-e-2",
+              size: "1024x1024",
+              response_format: "url",
+            },
           },
-          name: "openai-whisper",
         }),
-        returns: ["transcription"],
+        returnsAlias: { images: "dall-e-2" },
       },
     ],
   },
   {
     type: "series",
-    command: "analyzeImages",
+    command: "downloadImages",
     params: (context) => ({
-      service: "openai-vision",
-      images: context.framePaths,
-      opts: {
-        apiKey: process.env.OPENAI_API_KEY,
-        model: "gpt-4o",
-        message:
-          "Describe what is happening in these video frames in sequence. " +
-          "Do not use numbering or labels like 'Frame 1'. " +
-          "Prefix each frame's description with '~' and put each on a new line. " +
-          "Do not include any other text before or after the list.",
+      id: "http-download",
+      services: { imageDownloader: "http-download" },
+      params: {
+        urls: [context["dall-e-3"]?.[0], context["dall-e-2"]?.[0]],
+        outputDir: path.resolve(__dirname, "../../tmp"),
       },
-      name: "openai-vision-gpt-4o",
     }),
-    returnsAlias: { analysis: "frameAnalysis" },
+    returns: ["imagePaths"],
   },
   {
     type: "series",
-    command: "generateResponse",
+    command: "analyzeImages",
     params: (context) => ({
-      service: "openai-completion",
-      opts: {
-        apiKey: process.env.OPENAI_API_KEY,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an expert content strategist for short-form videos.",
-          },
-          {
-            role: "user",
-            content:
-              `Here is the transcript of a TikTok video:\n\n${context.transcription}\n\n` +
-              `Visual analysis of the frames:\n${context.frameAnalysis}\n\n` +
-              `Based on this, summarize the narrative and suggest 3 alternative but related concepts that could perform well.`,
-          },
-        ],
-        model: "gpt-4o",
+      id: "openai-vision-gpt-4o",
+      services: {
+        vision: "openai-vision",
       },
-      name: "openai-completion-gpt-4o",
+      params: {
+        images: context.imagePaths,
+        opts: {
+          apiKey: process.env.OPENAI_API_KEY,
+          model: "gpt-4o",
+          messages: [
+            `Compare the two images and tell me which: \n` +
+              `1) One better represents this prompt:\n"${context.prompt}" \n` +
+              `2) One is more realistic? \n Explain both why`,
+          ],
+        },
+      },
     }),
-    returnsAlias: { response: "suggestion" },
+    returnsAlias: { analysis: "visionAnalysis" },
   },
 ];
 ```
