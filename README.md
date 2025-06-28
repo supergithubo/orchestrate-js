@@ -4,7 +4,7 @@ OrchestrateJS is a **developer-focused workflow automation/orchestration framewo
 
 ## How It Works
 
-- **Workflows** are defined as arrays of steps (series/parallel) in code (see `index.js` as initial example).
+- **Workflows** are defined as arrays of steps (series/parallel) in code (see [examples](https://github.com/supergithubo/orchestrate-js/blob/master/examples/README.md)).
 - **Commands** implement each step (in `commands/`).
 - **Services** provide modular integrations (APIs, AI, storage, etc.).
 - **Runner** executes the workflow, passing context/results between steps.
@@ -18,24 +18,12 @@ OrchestrateJS is a **developer-focused workflow automation/orchestration framewo
 ├── tmp/              # Temporary files (if needed by workflows)
 ├── index.js          # Example workflow definition and entry point
 ├── runner.js         # Workflow runner/orchestrator
-├── config.js         # Main configuration
+├── config.js         # Global configuration
 ├── config.local.js   # Local overrides (gitignored)
 ├── .env              # Environment variables (gitignored)
 ├── package.json
 └── tests/            # Test files (Jest)
 ```
-
-## Example: TikTok Video Analysis Workflow
-
-The included example workflow:
-
-1. Downloads a TikTok video
-2. Transcribes its audio
-3. Extracts frames
-4. Analyzes frames with AI
-5. Generates new content concepts
-
-But you can define **any workflow** by editing or replacing the steps in `index.js`.
 
 ## Setup
 
@@ -61,12 +49,14 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 This project includes a `.nvmrc` file specifying the recommended Node.js version.
 
 **On Linux/macOS:**
+
 ```bash
 nvm install    # Installs the version from .nvmrc
 nvm use        # Uses the version from .nvmrc
 ```
 
 **On Windows (nvm-windows):**
+
 ```powershell
 # Check the version specified in .nvmrc
 more .nvmrc
@@ -76,18 +66,24 @@ nvm use <version-from-.nvmrc>
 ```
 
 ### 2. Clone the repository
+
 ### 3. Install dependencies
+
 ```bash
 npm install
 ```
+
 ### 4. Set up environment variables
+
 ```env
 OPENAI_API_KEY=your_openai_key
 RAPIDAPI_KEY=your_rapidapi_key
-REPLICATE_API_TOKEN=your_replicate_token
 ```
+
 ### 5. (Optional) Configure local overrides
+
 Copy `config.js` to `config.local.js` and adjust as needed.
+
 ### 6. Ensure ffmpeg is installed if your workflow needs it.
 
 ## Usage
@@ -121,56 +117,102 @@ Below is an example workflow (see `index.js`) that:
 [
   {
     type: "series",
-    command: "downloadTiktokVideo",
-    params: (context) => ({
-      videoUrl: context.config.app.videoUrl,
-      outputFile: context.config.app.outputFile,
-    }),
-    returns: ["filePath", "metadata"],
+    command: "downloadVideos",
+    params: {
+      service: "rapidapi-tiktok",
+      urls: [
+        "https://www.tiktok.com/@aigenerationd1z/video/7489079990118599958",
+      ],
+      outputDir: path.resolve(__dirname, "../../tmp"),
+      opts: {
+        apiKey: process.env.RAPIDAPI_KEY,
+      },
+      name: "rapidapi-tiktok",
+    },
+    returns: ["videoPaths"],
   },
   {
     type: "parallel",
     commands: [
       {
         type: "series",
-        command: "transcribeVideo",
+        command: "extractFrames",
         params: (context) => ({
-          filePath: context.filePath,
-          opts: { saveFile: context.config.app.saveTranscription },
+          service: "ffmpeg-frame",
+          videoPath: context.videoPaths[0],
+          outputDir: path.resolve(__dirname, "../../tmp"),
+          opts: {
+            frameLimit: 5,
+            ffmpegBin: config.app.ffmpegBin,
+            ffprobeBin: config.app.ffprobeBin,
+          },
+          name: "ffmpeg-frame",
         }),
-        returns: ["transcription"],
+        returns: ["framePaths"],
       },
       {
         type: "series",
-        command: "extractFrames",
+        command: "transcribeAudio",
         params: (context) => ({
-          filePath: context.filePath,
+          service: "openai-whisper",
+          file: context.videoPaths[0],
+          opts: {
+            apiKey: process.env.OPENAI_API_KEY,
+            model: "whisper-1",
+          },
+          name: "openai-whisper",
         }),
-        returns: ["frames"],
+        returns: ["transcription"],
       },
     ],
   },
   {
     type: "series",
-    command: "analyzeFrames",
+    command: "analyzeImages",
     params: (context) => ({
-      frames: context.frames,
-      metadata: context.metadata,
-      opts: { saveFile: context.config.app.saveAnalysis },
+      service: "openai-vision",
+      images: context.framePaths,
+      opts: {
+        apiKey: process.env.OPENAI_API_KEY,
+        model: "gpt-4o",
+        message:
+          "Describe what is happening in these video frames in sequence. " +
+          "Do not use numbering or labels like 'Frame 1'. " +
+          "Prefix each frame's description with '~' and put each on a new line. " +
+          "Do not include any other text before or after the list.",
+      },
+      name: "openai-vision-gpt-4o",
     }),
-    returns: ["frameDescriptions"],
+    returnsAlias: { analysis: "frameAnalysis" },
   },
   {
     type: "series",
-    command: "generateConcept",
+    command: "generateResponse",
     params: (context) => ({
-      transcript: context.transcription,
-      metadata: context.metadata,
-      frameDescriptions: context.frameDescriptions,
+      service: "openai-completion",
+      opts: {
+        apiKey: process.env.OPENAI_API_KEY,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an expert content strategist for short-form videos.",
+          },
+          {
+            role: "user",
+            content:
+              `Here is the transcript of a TikTok video:\n\n${context.transcription}\n\n` +
+              `Visual analysis of the frames:\n${context.frameAnalysis}\n\n` +
+              `Based on this, summarize the narrative and suggest 3 alternative but related concepts that could perform well.`,
+          },
+        ],
+        model: "gpt-4o",
+      },
+      name: "openai-completion-gpt-4o",
     }),
-    returns: ["concepts"],
+    returnsAlias: { response: "suggestion" },
   },
-]
+];
 ```
 
 #### How It Works
@@ -178,37 +220,47 @@ Below is an example workflow (see `index.js`) that:
 - **Series steps** run one after another, passing results to the next step.
 - **Parallel steps** run multiple commands at the same time, merging their results into the context.
 - The `params` function lets you dynamically build parameters using the current context (results from previous steps).
-- The `returns` array specifies which keys from the command's result should be added to the context for use in later steps.
+- The `returns` array / `returnsAlias` mapping specifies which keys from the command's result should be added to the context for use in later steps.
 
 ### Customizing Your Workflow
 
 1. **Edit `index.js`**: Change, add, or remove steps to fit your use case.
 2. **Add new commands**: Create a new file in `commands/` and reference it in your workflow.
 3. **Use services**: Integrate new APIs or logic by adding to `services/` and using them in your commands (feel free to contribute other services—APIs, LLMs, agents, etc.—by adding them to the `services/` directory).
-4. **Pass data**: Use the context object (config file) to pass data/results between steps.
 
 ### Existing Services
 
 The following services are currently available in the `services/` directory:
 
-- **Downloaders** (`services/downloaders/`):
-  - `rapidapi-tiktok.service.js` — Download TikTok videos via RapidAPI
+- **Downloaders**
 
-- **Transcribers** (`services/transcribers/`):
-  - `openai-whisper.service.js` — Audio transcription using OpenAI Whisper
+  - Image
+    - `http-download.service` — HTTP downloader
+  - Video
+    - `rapidapi-tiktok.service.js` — Download TikTok videos via RapidAPI
 
-- **Extractors** (`services/extractors/`):
-  - `ffmpeg-frame.service.js` — Extract video frames using ffmpeg
+- **Extractors**
 
-- **LLMs** (`services/llms/`):
-  - `openai.service.js` — Chat/completion with OpenAI LLMs
+  - Frame
+    - `ffmpeg-frame.service.js` — Extract video frames using ffmpeg
+  - Transcription
+    - `openai-whisper.service.js` — Audio transcription using OpenAI Whisper
 
-- **Vision Services** (`services/visions/`):
+- **Generators**
+
+  - Image
+    - `openai-image.service.js` — OpenAI Image generator
+
+- **LLMs**
+
+  - `openai-completion.service.js` — OpenAI LLM using Completion
+  - `openai-response.service.js` — OpenAI LLM using Response API
+
+- **Vision Services**
+
   - `openai-vision.service.js` — Frame analysis using OpenAI Vision
-  - `replicate-blip.service.js` — Frame analysis using Replicate BLIP
 
 - **Other Core Services**:
-  - `storage.service.js` — File and stream storage utilities
   - `logger.service.js` — Logging utilities
 
 ### Running Your Workflow

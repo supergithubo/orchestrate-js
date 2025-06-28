@@ -1,11 +1,7 @@
-/**
- * Main Entry Point
- *
- * This file defines the workflow for processing a TikTok video, including download, transcription, frame extraction, analysis, and concept generation.
- * It loads configuration, sets up the workflow steps, and runs the workflow using the runner module.
- *
- * Usage: node index.js
- */
+const path = require("path");
+
+require("dotenv").config();
+
 const config = require("./config");
 const runWorkflow = require("./runner");
 const logger = require("./services/logger.service");
@@ -13,71 +9,26 @@ const logger = require("./services/logger.service");
 const workflow = [
   {
     type: "series",
-    command: "downloadTiktokVideo",
-    params: (context) => ({
-      videoUrl: context.config.app.videoUrl,
-      outputFile: context.config.app.outputFile,
-    }),
-    returns: ["filePath", "metadata"],
-  },
-  {
-    type: "parallel",
-    commands: [
-      {
-        type: "series",
-        command: "transcribeVideo",
-        params: (context) => ({
-          filePath: context.filePath,
-          opts: {
-            saveFile: context.config.app.saveTranscription,
-          },
-        }),
-        returns: ["transcription"],
-      },
-      {
-        type: "series",
-        command: "extractFrames",
-        params: (context) => ({
-          filePath: context.filePath,
-        }),
-        returns: ["frames"],
-      },
-    ],
-  },
-  {
-    type: "series",
-    command: "analyzeFrames",
-    params: (context) => ({
-      frames: context.frames,
-      metadata: context.metadata,
+    command: "generateResponse",
+    params: {
+      service: "openai-response",
       opts: {
-        saveFile: context.config.app.saveAnalysis,
+        apiKey: process.env.OPENAI_API_KEY,
+        input: "Hello, make me a prompt for an image of a cat.",
+        model: "gpt-4o-mini",
       },
-    }),
-    returns: ["frameDescriptions"],
-  },
-  {
-    type: "series",
-    command: "generateConcept",
-    params: (context) => ({
-      transcript: context.transcription,
-      metadata: context.metadata,
-      frameDescriptions: context.frameDescriptions,
-    }),
-    returns: ["concepts"],
+      name: "openai-response-gpt-4o-mini",
+    },
+    returnsAlias: { response: "prompt" },
   },
 ];
 
 (async () => {
   try {
     logger.log("info", "Starting workflow...");
-    const result = await runWorkflow(workflow, { config });
-    logger.log(
-      "info",
-      "\n✅ Workflow completed with result:\n",
-      result.concepts || result
-    );
+    const result = await runWorkflow(workflow, {});
+    console.log(result);
   } catch (err) {
-    logger.logError("Error in workflow:", err);
+    logger.logError(err, "Error in workflow:");
   }
 })();
