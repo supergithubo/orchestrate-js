@@ -31,7 +31,7 @@ function getVideoFPS(filePath, opts = {}) {
   const cmd = `${
     opts.ffprobeBin || "ffprobe"
   } -v 0 -select_streams v:0 -show_entries stream=r_frame_rate -of csv=p=0 "${filePath}"`;
-  const output = execSync(cmd).toString().trim(); // e.g., "30000/1001"
+  const output = execSync(cmd).toString().trim();
   const [num, den] = output.split("/").map(Number);
   return den ? num / den : parseFloat(output);
 }
@@ -49,7 +49,8 @@ async function extractFrames(videoPath, outputDir, opts = {}) {
     throw new Error(`'frameLimit' must be a number in opts`);
   }
 
-  await fs.mkdir(outputDir, { recursive: true });
+  const uniqueDir = path.join(outputDir, `frames_${uuid()}`);
+  await fs.mkdir(uniqueDir, { recursive: true });
 
   const duration = getVideoDuration(videoPath, opts);
   const fps = getVideoFPS(videoPath, opts);
@@ -62,7 +63,7 @@ async function extractFrames(videoPath, outputDir, opts = {}) {
   }
 
   const interval = duration / opts.frameLimit;
-  const outputPattern = path.join(outputDir, `frame_%03d.png`);
+  const outputPattern = path.join(uniqueDir, `frame_%03d.png`);
   const vf = `fps=1/${interval.toFixed(4)}`;
   const ffmpeg = opts.ffmpegBin || "ffmpeg";
 
@@ -72,12 +73,8 @@ async function extractFrames(videoPath, outputDir, opts = {}) {
     exec(command, (err) => {
       if (err) return reject(new Error(`ffmpeg error: ${err.message}`));
 
-      fs.readdir(outputDir)
-        .then((files) =>
-          files
-            .filter((f) => f.startsWith("frame_") && f.endsWith(".png"))
-            .map((f) => path.join(outputDir, f))
-        )
+      fs.readdir(uniqueDir)
+        .then((files) => files.map((f) => path.join(uniqueDir, f)))
         .then(resolve)
         .catch(reject);
     });
