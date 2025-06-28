@@ -21,21 +21,17 @@ async function download(url, outputDir) {
     throw new Error(`'outputDir' is required and must be a string`);
   }
 
-  try {
-    const res = await axios.get(url, { responseType: "arraybuffer" });
+  const res = await axios.get(url, { responseType: "arraybuffer" });
 
-    const ext = res.headers["content-type"]?.split("/")[1] || "png";
-    const filename = `image-${uuid()}.${ext}`;
+  const ext = res.headers["content-type"]?.split("/")[1] || "png";
+  const filename = `image-${uuid()}.${ext}`;
 
-    await fs.mkdir(outputDir, { recursive: true });
+  await fs.mkdir(outputDir, { recursive: true });
 
-    const targetPath = path.join(outputDir, filename);
-    await fs.writeFile(targetPath, res.data);
+  const targetPath = path.join(outputDir, filename);
+  await fs.writeFile(targetPath, res.data);
 
-    return targetPath;
-  } catch (err) {
-    throw new Error(`Failed to download image from ${url}: ${err.message}`);
-  }
+  return targetPath;
 }
 
 /**
