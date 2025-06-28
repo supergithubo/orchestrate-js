@@ -40,7 +40,7 @@ async function getDownloadUrl(videoUrl, apiKey) {
  *
  * @param {string} videoUrl - TikTok video page URL
  * @param {string} outputDir - Folder where video will be saved (required)
- * @param {object} opts - Options (must include `apiKey`)
+ * @param {object} opts - Options (must include `apiKey`; can include `cache`)
  * @returns {Promise<string>} Path to saved video
  */
 async function download(videoUrl, outputDir, opts = {}) {
@@ -58,17 +58,22 @@ async function download(videoUrl, outputDir, opts = {}) {
 
   const hash = crypto.createHash("sha1").update(videoUrl).digest("hex");
   await fs.mkdir(outputDir, { recursive: true });
-  const possibleFiles = await fs.readdir(outputDir);
-  const cached = possibleFiles.find((f) => f.startsWith(`video-${hash}`));
-  if (cached) {
-    return path.join(outputDir, cached);
-  }
-
   const downloadUrl = await getDownloadUrl(videoUrl, opts.apiKey);
   const ext = path.extname(new URL(downloadUrl).pathname) || ".mp4";
-  const filename = `video-${hash}${ext}`;
-  const targetPath = path.join(outputDir, filename);
 
+  let filename;
+  if (opts.cache === true) {
+    filename = `video_${hash}${ext}`;
+    const possibleFiles = await fs.readdir(outputDir);
+    const cached = possibleFiles.find((f) => f.startsWith(`video_${hash}`));
+    if (cached) {
+      return path.join(outputDir, cached);
+    }
+  } else {
+    filename = `video_${uuid()}${ext}`;
+  }
+
+  const targetPath = path.join(outputDir, filename);
   const writer = fss.createWriteStream(targetPath);
   const response = await axios({
     method: "GET",
@@ -99,7 +104,7 @@ async function download(videoUrl, outputDir, opts = {}) {
  *
  * @param {string|string[]} urls - TikTok URLs
  * @param {string} outputDir - Folder path to save videos (required)
- * @param {object} opts - Options (must include `apiKey`)
+ * @param {object} opts - Options (must include `apiKey`; can include `cache`).
  * @returns {Promise<string[]>} Paths to saved videos
  */
 async function downloadVideos(urls, outputDir, opts) {

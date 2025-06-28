@@ -20,6 +20,7 @@ const workflow = [
         outputDir: path.resolve(__dirname, "../../tmp"),
         opts: {
           apiKey: process.env.RAPIDAPI_KEY,
+          cache: true,
         },
       },
     },
@@ -41,6 +42,7 @@ const workflow = [
               frameLimit: 5,
               ffmpegBin: config.app.ffmpegBin,
               ffprobeBin: config.app.ffprobeBin,
+              cache: true,
             },
           },
         }),

@@ -3,6 +3,7 @@
 const path = require("path");
 const fs = require("fs/promises");
 const { exec, execSync } = require("child_process");
+const crypto = require("crypto");
 const { v4: uuid } = require("uuid");
 
 /**
@@ -41,7 +42,7 @@ function getVideoFPS(filePath, opts = {}) {
  *
  * @param {string} videoPath - Path to video file
  * @param {string} outputDir - Base directory to save a unique subfolder of frames
- * @param {object} opts - Options (must include `frameLimit`; can include `ffmpegBin`, `ffprobeBin`)
+ * @param {object} opts - Options (must include `frameLimit`; can include `ffmpegBin`, `ffprobeBin`, `cache`).
  * @returns {Promise<string[]>} Array of full paths to generated frames
  */
 async function extractFrames(videoPath, outputDir, opts = {}) {
@@ -49,7 +50,31 @@ async function extractFrames(videoPath, outputDir, opts = {}) {
     throw new Error(`'frameLimit' must be a number in opts`);
   }
 
-  const uniqueDir = path.join(outputDir, `frames_${uuid()}`);
+  let cacheDir;
+  let cacheFiles = [];
+  if (opts.cache === true) {
+    const absPath = path.resolve(videoPath);
+    const hash = crypto
+      .createHash("sha1")
+      .update(absPath)
+      .update(String(opts.frameLimit))
+      .digest("hex");
+    cacheDir = path.join(outputDir, `frames_${hash}`);
+
+    const exists = await fs
+      .access(cacheDir)
+      .then(() => true)
+      .catch(() => false);
+
+    if (exists) {
+      cacheFiles = await fs.readdir(cacheDir);
+      if (cacheFiles.length === opts.frameLimit) {
+        return cacheFiles.map((f) => path.join(cacheDir, f));
+      }
+    }
+  }
+
+  const uniqueDir = cacheDir || path.join(outputDir, `frames_${uuid()}`);
   await fs.mkdir(uniqueDir, { recursive: true });
 
   const duration = getVideoDuration(videoPath, opts);
