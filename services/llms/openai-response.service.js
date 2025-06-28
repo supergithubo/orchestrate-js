@@ -1,4 +1,4 @@
-// services/llms/openai.service.js
+// services/llms/openai-response.service.js
 
 const { OpenAI } = require("openai");
 
@@ -9,12 +9,12 @@ let model = "gpt-4o-mini";
  *
  * @param {object} opts - Full OpenAI request payload (must include `apiKey`; others per API spec)
  * @param {string} opts.apiKey - OpenAI API key (required; stripped before sending)
- * @see https://platform.openai.com/docs/api-reference/responses/create for all valid `opts` fields
+ * @see https://platform.openai.com/docs/api-reference/responses for all valid `opts` fields
  *
  * @returns {Promise<string>} The generated response text
  * @throws {Error} If `apiKey` is missing
  */
-async function getReponse(opts = {}) {
+async function getResponse(opts = {}) {
   if (!opts.apiKey) throw new Error(`'apiKey' is required`);
 
   opts.model = opts.model || model;
@@ -33,5 +33,5 @@ async function getReponse(opts = {}) {
 }
 
 module.exports = {
-  getReponse,
+  getResponse,
 };
