@@ -3,6 +3,7 @@
 const fs = require("fs/promises");
 const path = require("path");
 const axios = require("axios");
+const crypto = require("crypto");
 const { v4: uuid } = require("uuid");
 
 /**
@@ -21,16 +22,21 @@ async function download(url, outputDir) {
     throw new Error(`'outputDir' is required and must be a string`);
   }
 
-  const res = await axios.get(url, { responseType: "arraybuffer" });
-
-  const ext = res.headers["content-type"]?.split("/")[1] || "png";
-  const filename = `image-${uuid()}.${ext}`;
-
+  const hash = crypto.createHash("sha1").update(url).digest("hex");
   await fs.mkdir(outputDir, { recursive: true });
 
+  let ext = "png";
+  const possibleFiles = await fs.readdir(outputDir);
+  const cached = possibleFiles.find((f) => f.startsWith(`image-${hash}`));
+  if (cached) {
+    return path.join(outputDir, cached);
+  }
+
+  const res = await axios.get(url, { responseType: "arraybuffer" });
+  ext = res.headers["content-type"]?.split("/")[1] || "png";
+  const filename = `image-${hash}.${ext}`;
   const targetPath = path.join(outputDir, filename);
   await fs.writeFile(targetPath, res.data);
-
   return targetPath;
 }
 

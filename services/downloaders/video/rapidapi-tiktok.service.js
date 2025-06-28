@@ -4,6 +4,7 @@ const fs = require("fs/promises");
 const fss = require("fs");
 const path = require("path");
 const axios = require("axios");
+const crypto = require("crypto");
 const { v4: uuid } = require("uuid");
 
 /**
@@ -55,23 +56,42 @@ async function download(videoUrl, outputDir, opts = {}) {
     throw new Error(`'apiKey' is required in opts`);
   }
 
-  const downloadUrl = await getDownloadUrl(videoUrl, opts.apiKey);
+  const hash = crypto.createHash("sha1").update(videoUrl).digest("hex");
+  await fs.mkdir(outputDir, { recursive: true });
+  const possibleFiles = await fs.readdir(outputDir);
+  const cached = possibleFiles.find((f) => f.startsWith(`video-${hash}`));
+  if (cached) {
+    return path.join(outputDir, cached);
+  }
 
+  const downloadUrl = await getDownloadUrl(videoUrl, opts.apiKey);
   const ext = path.extname(new URL(downloadUrl).pathname) || ".mp4";
-  const filename = `video-${uuid()}${ext}`;
+  const filename = `video-${hash}${ext}`;
   const targetPath = path.join(outputDir, filename);
 
-  await fs.mkdir(outputDir, { recursive: true });
-
   const writer = fss.createWriteStream(targetPath);
-
-  const response = await axios.get(downloadUrl, { responseType: "stream" });
-  response.data.pipe(writer);
-
-  return new Promise((resolve, reject) => {
-    writer.on("finish", () => resolve(targetPath));
-    writer.on("error", reject);
+  const response = await axios({
+    method: "GET",
+    url: downloadUrl,
+    responseType: "stream",
   });
+
+  await new Promise((resolve, reject) => {
+    response.data.pipe(writer);
+    let error = null;
+    writer.on("error", (err) => {
+      error = err;
+      writer.close();
+      reject(err);
+    });
+    writer.on("close", () => {
+      if (!error) {
+        resolve();
+      }
+    });
+  });
+
+  return targetPath;
 }
 
 /**
