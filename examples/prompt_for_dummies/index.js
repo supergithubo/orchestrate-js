@@ -9,14 +9,14 @@ const workflow = [
     type: "series",
     command: "generateResponse",
     params: {
-      service: "openai",
+      service: "openai-response",
       opts: {
         apiKey: process.env.OPENAI_API_KEY,
         input:
           "I'm a dumb user that can't imagine anything. Make me an image prompt about the sky.",
         model: "gpt-4o-mini",
       },
-      name: "openai-gpt-4o-mini",
+      name: "openai-response-gpt-4o-mini",
     },
     returnsAlias: { response: "prompt" },
   },
