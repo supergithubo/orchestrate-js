@@ -2,7 +2,7 @@
 
 const { OpenAI } = require("openai");
 
-let model = "gpt-4o-mini";
+const DEFAULT_MODEL = "gpt-4o-mini";
 
 /**
  * Get a response from OpenAI using the Responses API.
@@ -17,14 +17,13 @@ let model = "gpt-4o-mini";
 async function getResponse(opts = {}) {
   if (!opts.apiKey) throw new Error(`'apiKey' is required`);
 
-  opts.model = opts.model || model;
-  model = opts.model;
-
   const { apiKey, ...rawPayload } = opts;
-
-  const payload = Object.fromEntries(
-    Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
-  );
+  const payload = {
+    model: DEFAULT_MODEL,
+    ...Object.fromEntries(
+      Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
+    ),
+  };
 
   const client = new OpenAI({ apiKey });
   const response = await client.responses.create(payload);

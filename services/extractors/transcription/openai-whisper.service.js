@@ -3,7 +3,7 @@
 const fs = require("fs");
 const { OpenAI } = require("openai");
 
-let model = "whisper-1";
+const DEFAULT_MODEL = "whisper-1";
 
 /**
  * Transcribe audio using OpenAI's Whisper API.
@@ -19,18 +19,16 @@ let model = "whisper-1";
 async function transcribe(filePath, opts = {}) {
   if (!opts.apiKey) throw new Error(`'apiKey' is required`);
   if (!filePath) throw new Error(`'filePath' is required`);
-
-  opts.model = opts.model || model;
-  model = opts.model;
-
-  const { apiKey, ...rawPayload } = opts;
   const fileStream = fs.createReadStream(filePath);
 
-  const payload = Object.fromEntries(
-    Object.entries({ ...rawPayload, file: fileStream }).filter(
-      ([_, v]) => v !== undefined
-    )
-  );
+  const { apiKey, ...rawPayload } = opts;
+  const payload = {
+    ...Object.fromEntries(
+      Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
+    ),
+    file: fileStream,
+  };
+  if (!payload.model) payload.model = DEFAULT_MODEL;
 
   const client = new OpenAI({ apiKey });
   const response = await client.audio.transcriptions.create(payload);

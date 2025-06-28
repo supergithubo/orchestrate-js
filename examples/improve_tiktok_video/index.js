@@ -54,7 +54,7 @@ const workflow = [
           },
           name: "openai-whisper",
         }),
-        returns: ["transcription"], 
+        returns: ["transcription"],
       },
     ],
   },
@@ -67,11 +67,12 @@ const workflow = [
       opts: {
         apiKey: process.env.OPENAI_API_KEY,
         model: "gpt-4o",
-        message:
+        messages: [
           "Describe what is happening in these video frames in sequence. " +
-          "Do not use numbering or labels like 'Frame 1'. " +
-          "Prefix each frame's description with '~' and put each on a new line. " +
-          "Do not include any other text before or after the list.",
+            "Do not use numbering or labels like 'Frame 1'. " +
+            "Prefix each frame's description with '~' and put each on a new line. " +
+            "Do not include any other text before or after the list.",
+        ],
       },
       name: "openai-vision-gpt-4o",
     }),

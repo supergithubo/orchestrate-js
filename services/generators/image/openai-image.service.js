@@ -2,7 +2,7 @@
 
 const { OpenAI } = require("openai");
 
-let model = "dall-e-3";
+const DEFAULT_MODEL = "dall-e-3";
 
 /**
  * Generate image(s) using OpenAI's image generation API.
@@ -19,21 +19,26 @@ async function getImageResponse(opts = {}) {
   if (!opts.apiKey) throw new Error(`'apiKey' is required`);
   if (!opts.prompt) throw new Error(`'prompt' is required`);
 
-  opts.model = opts.model || model;
-  model = opts.model;
-
   const { apiKey, ...rawPayload } = opts;
-
-  const payload = Object.fromEntries(
-    Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
-  );
+  const payload = {
+    ...Object.fromEntries(
+      Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
+    ),
+  };
+  if (!payload.model) payload.model = DEFAULT_MODEL;
 
   const client = new OpenAI({ apiKey });
   const response = await client.images.generate(payload);
 
-  return response.data.map((img) =>
-    payload.response_format === "b64_json" ? img.b64_json : img.url
-  );
+  return response.data.map((img) => {
+    if (payload.response_format === "b64_json") {
+      if (!img.b64_json) throw new Error("Missing b64_json in image response");
+      return img.b64_json;
+    } else {
+      if (!img.url) throw new Error("Missing url in image response");
+      return img.url;
+    }
+  });
 }
 
 module.exports = {

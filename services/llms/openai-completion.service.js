@@ -2,7 +2,7 @@
 
 const { OpenAI } = require("openai");
 
-let model = "gpt-4o-mini";
+const DEFAULT_MODEL = "gpt-4o-mini";
 
 /**
  * Get a response from OpenAI using the Chat Completions API.
@@ -20,14 +20,13 @@ async function getResponse(opts = {}) {
   if (!opts.apiKey) throw new Error(`'apiKey' is required`);
   if (!opts.messages) throw new Error(`'messages' is required`);
 
-  opts.model = opts.model || model;
-  model = opts.model;
-
   const { apiKey, ...rawPayload } = opts;
-
-  const payload = Object.fromEntries(
-    Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
-  );
+  const payload = {
+    ...Object.fromEntries(
+      Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
+    ),
+  };
+  if (!payload.model) payload.model = DEFAULT_MODEL;
 
   const client = new OpenAI({ apiKey });
   const response = await client.chat.completions.create(payload);

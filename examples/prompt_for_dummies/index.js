@@ -77,10 +77,11 @@ const workflow = [
       opts: {
         apiKey: process.env.OPENAI_API_KEY,
         model: "gpt-4o",
-        message:
+        messages: [
           `Compare the two images and tell me which: \n` +
-          `1) One better represents this prompt:\n"${context.prompt}" \n` +
-          `2) One is more realistic? \n Explain both why`,
+            `1) One better represents this prompt:\n"${context.prompt}" \n` +
+            `2) One is more realistic? \n Explain both why`,
+        ],
       },
       name: "openai-vision-gpt-4o",
     }),

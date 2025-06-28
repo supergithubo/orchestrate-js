@@ -3,7 +3,7 @@
 const fs = require("fs");
 const { OpenAI } = require("openai");
 
-let model = "gpt-4o";
+const DEFAULT_MODEL = "gpt-4o";
 
 /**
  * Analyze images using OpenAI vision via chat completion.
@@ -24,16 +24,15 @@ async function analyzeImages(images, opts = {}) {
   }
 
   if (!opts.apiKey) throw new Error(`'apiKey' is required`);
-  if (!opts.message) throw new Error(`'message' is required`);
+  if (!opts.messages) throw new Error(`'messages' is required`);
 
-  opts.model = opts.model || model;
-  model = opts.model;
-
-  const { apiKey, message, ...rawPayload } = opts;
-
-  const payload = Object.fromEntries(
-    Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
-  );
+  const { apiKey, messages, ...rawPayload } = opts;
+  const payload = {
+    ...Object.fromEntries(
+      Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
+    ),
+  };
+  if (!payload.model) payload.model = DEFAULT_MODEL;
 
   const client = new OpenAI({ apiKey });
 
@@ -56,11 +55,11 @@ async function analyzeImages(images, opts = {}) {
   const results = [];
 
   for (const batch of batches) {
-    const messageContent = [
-      { type: "text", text: message },
-      ...batch.map(toImagePart),
-    ];
+    const textParts = Array.isArray(messages)
+      ? messages.map((m) => ({ type: "text", text: m }))
+      : [{ type: "text", text: messages }];
 
+    const messageContent = [...textParts, ...batch.map(toImagePart)];
     const response = await client.chat.completions.create({
       ...payload,
       messages: [
