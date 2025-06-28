@@ -2,6 +2,7 @@
 
 const fs = require("fs");
 const { OpenAI } = require("openai");
+const utils = require("../../utils.service");
 
 const DEFAULT_MODEL = "whisper-1";
 
@@ -23,12 +24,10 @@ async function transcribe(filePath, opts = {}) {
 
   const { apiKey, ...rawPayload } = opts;
   const payload = {
-    ...Object.fromEntries(
-      Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
-    ),
+    ...utils.filterUndefined(rawPayload),
+    model: rawPayload.model || DEFAULT_MODEL,
     file: fileStream,
   };
-  if (!payload.model) payload.model = DEFAULT_MODEL;
 
   const client = new OpenAI({ apiKey });
   const response = await client.audio.transcriptions.create(payload);

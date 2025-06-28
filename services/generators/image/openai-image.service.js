@@ -1,6 +1,7 @@
 // services/generators/image/openai-image.service.js
 
 const { OpenAI } = require("openai");
+const utils = require("../../utils.service");
 
 const DEFAULT_MODEL = "dall-e-3";
 
@@ -21,11 +22,9 @@ async function getImageResponse(opts = {}) {
 
   const { apiKey, ...rawPayload } = opts;
   const payload = {
-    ...Object.fromEntries(
-      Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
-    ),
+    ...utils.filterUndefined(rawPayload),
+    model: rawPayload.model || DEFAULT_MODEL,
   };
-  if (!payload.model) payload.model = DEFAULT_MODEL;
 
   const client = new OpenAI({ apiKey });
   const response = await client.images.generate(payload);

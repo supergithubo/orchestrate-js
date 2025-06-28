@@ -1,6 +1,7 @@
 // services/llms/openai-completion.service.js
 
 const { OpenAI } = require("openai");
+const utils = require("../../utils.service");
 
 const DEFAULT_MODEL = "gpt-4o-mini";
 
@@ -22,11 +23,9 @@ async function getResponse(opts = {}) {
 
   const { apiKey, ...rawPayload } = opts;
   const payload = {
-    ...Object.fromEntries(
-      Object.entries(rawPayload).filter(([_, v]) => v !== undefined)
-    ),
+    ...utils.filterUndefined(rawPayload),
+    model: rawPayload.model || DEFAULT_MODEL,
   };
-  if (!payload.model) payload.model = DEFAULT_MODEL;
 
   const client = new OpenAI({ apiKey });
   const response = await client.chat.completions.create(payload);
