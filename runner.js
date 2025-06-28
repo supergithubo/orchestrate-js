@@ -57,10 +57,19 @@ function checkDuplicateReturns(workflow) {
 async function runSeries(step, context) {
   const { command, params } = step;
   const commandPath = path.join(__dirname, "commands", `${command}.run.js`);
-  const commandFn = require(commandPath);
-  const resolvedParams =
-    typeof params === "function" ? params(context) : params;
 
+  let resolvedParams = typeof params === "function" ? params(context) : params;
+  if (
+    !resolvedParams ||
+    typeof resolvedParams !== "object" ||
+    !("id" in resolvedParams && "params" in resolvedParams)
+  ) {
+    throw new Error(
+      "Command params must be in the form { id, services, params }"
+    );
+  }
+
+  const commandFn = require(commandPath);
   return await commandFn(resolvedParams);
 }
 
