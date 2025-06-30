@@ -8,7 +8,7 @@ export type AppConfig = {
     defaults: {
       llm: string;
       vision: string;
-      generators: { image: string };
+      generators: { image: string; video: string };
       extractors: { frame: string; transcription: string };
       downloaders: { image: string; video: string };
     };
@@ -22,7 +22,7 @@ const baseConfig: AppConfig = {
     defaults: {
       llm: "openai-response",
       vision: "openai-vision",
-      generators: { image: "openai-image" },
+      generators: { image: "openai-image", video: "" },
       extractors: { frame: "ffmpeg-frame", transcription: "openai-whisper" },
       downloaders: { image: "http-download", video: "rapidapi-tiktok" },
     },
