@@ -1,6 +1,10 @@
 # OrchestrateJS
 
-OrchestrateJS is a **developer-first workflow automation/orchestration framework** for building powerful, flexible, and composable automations in code. It lets you define, run, and extend complex multi-step workflows that connect APIs, AI models, and custom logic—using modular, pluggable commands and services.
+OrchestrateJS is a **developer-first workflow automation/orchestration framework** for building powerful, flexible, and composable automations in code. 
+
+> **Inspired by** [n8n](https://app.n8n.cloud/), [Make.com](https://www.make.com/en), and [Zapier](https://zapier.com/workflows), OrchestrateJS brings the power and flexibility of code-first workflow automation to developers who want full control, extensibility, and composability.
+
+Unlike visual workflow builders, OrchestrateJS lets you define, run, and extend complex multi-step workflows directly in JavaScript/TypeScript—connecting APIs, AI models, and custom logic using modular, pluggable commands and services.
 
 ## Key Features
 
