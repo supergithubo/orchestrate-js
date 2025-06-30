@@ -9,18 +9,18 @@ import type { WorkflowStep } from "./runner";
 const workflow: WorkflowStep[] = [
   {
     type: "series",
-    command: "generateResponse",
+    command: "getResponse",
     params: {
       services: { llm: "openai-completion" },
       params: {
+        input: [
+          {
+            role: "user",
+            content: "Hello, make me a prompt for an image of a cat.",
+          },
+        ],
         opts: {
           apiKey: process.env.OPENAI_API_KEY,
-          messages: [
-            {
-              role: "user",
-              content: "Hello, make me a prompt for an image of a cat.",
-            },
-          ],
           model: "gpt-4o-mini",
         },
       },

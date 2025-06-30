@@ -2,7 +2,7 @@
 
 import { getLoaderExtension } from "../../utils.service";
 
-export default async function loadTranscriptionExtractor(
+export default async function load(
   serviceKey: string
 ): Promise<any> {
   let service: any;

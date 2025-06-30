@@ -4,17 +4,20 @@ import * as fs from "fs";
 const DEFAULT_MODEL = "gpt-4o";
 
 /**
- * Analyze images using OpenAI vision via chat completion.
+ * Describe images using OpenAI vision via chat completion.
  *
  * @param images Array of image paths(required)
+ * 
  * @param opts Full OpenAI request payload (must include apiKey; others per API spec)
  * @param opts.apiKey OpenAI API key (required; stripped before sending)
  * @param opts.model OpenAI model (e.g., gpt-4o) (defaults to gpt-4o)
  * @param opts.messages Message to prepend (instructions) before image content (required)
- * @returns Promise<string[]> Array of analysis results
+ * @see https://platform.openai.com/docs/api-reference/images for all valid `opts` fields
+ * 
+ * @returns Promise<string[]> Array of description results
  * @throws Error If required parameters are missing
  */
-export async function analyzeImages(
+export async function describeImages(
   images: string[],
   opts: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming & { apiKey: string }
 ): Promise<string[]> {
@@ -96,5 +99,5 @@ export async function analyzeImages(
 }
 
 export default {
-  analyzeImages,
+  describeImages,
 };

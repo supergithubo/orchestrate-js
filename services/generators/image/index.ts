@@ -2,7 +2,7 @@
 
 import { getLoaderExtension } from "../../utils.service";
 
-export default async function loadImageGenerator(
+export default async function load(
   serviceKey: string
 ): Promise<any> {
   let service: any;
@@ -10,8 +10,8 @@ export default async function loadImageGenerator(
   try {
     const module = await import(`./${serviceKey}.service.${ext}`);
     service = module.default;
-    if (typeof service.getImageResponse !== "function") {
-      throw new Error(`Module '${serviceKey}' must export 'getImageResponse'`);
+    if (typeof service.getImage !== "function") {
+      throw new Error(`Module '${serviceKey}' must export 'getImage'`);
     }
   } catch (err: any) {
     throw new Error(

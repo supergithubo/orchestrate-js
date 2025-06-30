@@ -41,14 +41,14 @@ This workflow is designed to be accessible and modifiable—swap out models, cha
 [
   {
     type: "series",
-    command: "generateResponse",
+    command: "getResponse",
     params: {
       id: "openai-response-gpt-4o-mini",
       services: { llm: "openai-response" },
       params: {
+        input: "Give me a creative image prompt about the sky.",
         opts: {
           apiKey: process.env.OPENAI_API_KEY,
-          input: "Give me a creative image prompt about the sky.",
           model: "gpt-4o-mini",
         },
       },
@@ -60,14 +60,14 @@ This workflow is designed to be accessible and modifiable—swap out models, cha
     commands: [
       {
         type: "series",
-        command: "generateImageResponse",
+        command: "generateImage",
         params: (context: any) => ({
           id: "openai-image-dall-e-3",
           services: { imageGenerator: "openai-image" },
           params: {
+            prompt: context.prompt,
             opts: {
               apiKey: process.env.OPENAI_API_KEY,
-              prompt: context.prompt,
               model: "dall-e-3",
               size: "1024x1024",
               response_format: "url",
@@ -78,14 +78,14 @@ This workflow is designed to be accessible and modifiable—swap out models, cha
       },
       {
         type: "series",
-        command: "generateImageResponse",
+        command: "generateImage",
         params: (context: any) => ({
           id: "openai-image-dall-e-2",
           services: { imageGenerator: "openai-image" },
           params: {
+            prompt: context.prompt,
             opts: {
               apiKey: process.env.OPENAI_API_KEY,
-              prompt: context.prompt,
               model: "dall-e-2",
               size: "1024x1024",
               response_format: "url",
@@ -111,7 +111,7 @@ This workflow is designed to be accessible and modifiable—swap out models, cha
   },
   {
     type: "series",
-    command: "analyzeImages",
+    command: "describeImages",
     params: (context: any) => ({
       id: "openai-vision",
       services: { vision: "openai-vision" },
@@ -132,7 +132,7 @@ This workflow is designed to be accessible and modifiable—swap out models, cha
         },
       },
     }),
-    returnsAlias: { analysis: "visionAnalysis" },
+    returnsAlias: { description: "visionAnalysis" },
   },
 ];
 ```

@@ -1,6 +1,6 @@
 import config from "../config";
 import logger from "../services/logger.service";
-import loadFrameExtractor from "../services/extractors/frame";
+import load from "../services/extractors/frame";
 
 const FRAME_EXTRACTOR = config.app.defaults.extractors.frame;
 
@@ -14,18 +14,20 @@ const FRAME_EXTRACTOR = config.app.defaults.extractors.frame;
  * @param args.params Required parameters for frame extraction.
  * @param args.params.videoPath Path to the video file. (required)
  * @param args.params.outputDir Output directory for extracted frames. (required)
+ * @param args.params.frames How many frames to extract. (required)
  * @param args.params.opts Service-specific options (optional).
+ * 
  * @throws Error If required fields are missing: services.frameExtractor, params.videoPath, or params.outputDir.
  * @returns Extracted frame file paths.
  */
-export default async function extractFramesRun({
+export default async function run({
   id,
   services = {},
   params,
 }: {
   id: string;
   services?: { frameExtractor?: string };
-  params: { videoPath: string; outputDir: string; opts?: any };
+  params: { videoPath: string; outputDir: string; frames: number; opts?: any };
 }): Promise<{ framePaths: string[] }> {
   const frameKey = services?.frameExtractor || FRAME_EXTRACTOR;
   if (!frameKey) {
@@ -37,19 +39,22 @@ export default async function extractFramesRun({
   if (!params || typeof params !== "object") {
     throw new Error("params object is required");
   }
-  const { videoPath, outputDir, opts } = params;
+  const { videoPath, outputDir, frames, opts } = params;
   if (!videoPath) {
     throw new Error("params.videoPath is required");
   }
   if (!outputDir) {
     throw new Error("params.outputDir is required");
   }
+  if (!frames) {
+    throw new Error("params.frames is required");
+  }
 
-  const frameExtractor = await loadFrameExtractor(frameKey);
+  const frameExtractor = await load(frameKey);
   const { extractFrames } = frameExtractor;
 
   logger.log("info", "extractor/frame", id, "Extracting frames...");
-  const framePaths = await extractFrames(videoPath, outputDir, opts);
+  const framePaths = await extractFrames(videoPath, outputDir, frames, opts);
 
   return { framePaths };
 }

@@ -1,6 +1,6 @@
 import config from "../config";
 import logger from "../services/logger.service";
-import loadImageDownloader from "../services/downloaders/image";
+import load from "../services/downloaders/image";
 
 const IMAGE_DOWNLOADER = config.app.defaults.downloaders.image;
 
@@ -14,10 +14,11 @@ const IMAGE_DOWNLOADER = config.app.defaults.downloaders.image;
  * @param args.params Required parameters for image download.
  * @param args.params.urls Array of image URLs to download. (required)
  * @param args.params.outputDir Output directory for downloaded images. (required)
+ * 
  * @throws Error If required fields are missing: services.imageDownloader, params.urls, or params.outputDir.
  * @returns Downloaded image file paths.
  */
-export default async function downloadImagesRun({
+export default async function run({
   id,
   services = {},
   params,
@@ -44,7 +45,7 @@ export default async function downloadImagesRun({
     throw new Error("params.outputDir is required");
   }
 
-  const imageDownloader = await loadImageDownloader(imageKey);
+  const imageDownloader = await load(imageKey);
   const { downloadImages } = imageDownloader;
 
   logger.log("info", "downloader/image", id, "Downloading images...");

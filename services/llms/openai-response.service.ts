@@ -5,6 +5,7 @@ const DEFAULT_MODEL = "gpt-4o-mini";
 /**
  * Get a response from OpenAI using the Responses API.
  *
+ * @param input The input to the LLM (string or array of objects)
  * @param opts Full OpenAI request payload (must include apiKey; others per API spec)
  * @param opts.apiKey OpenAI API key (required; stripped before sending)
  * @see https://platform.openai.com/docs/api-reference/responses for all valid opts fields
@@ -13,6 +14,7 @@ const DEFAULT_MODEL = "gpt-4o-mini";
  * @throws Error If apiKey is missing
  */
 export async function getResponse(
+  input: string | Array<any>, 
   opts: OpenAI.Responses.ResponseCreateParamsNonStreaming & { apiKey: string }
 ): Promise<string> {
   if (!opts.apiKey) throw new Error(`'apiKey' is required`);
@@ -21,6 +23,7 @@ export async function getResponse(
   const payload: OpenAI.Responses.ResponseCreateParamsNonStreaming = {
     ...rawPayload,
     model: rawPayload.model || DEFAULT_MODEL,
+    input,
   };
 
   const client = new OpenAI({ apiKey });

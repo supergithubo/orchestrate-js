@@ -1,6 +1,6 @@
 import config from "../config";
 import logger from "../services/logger.service";
-import loadVideoDownloader from "../services/downloaders/video";
+import load from "../services/downloaders/video";
 
 const VIDEO_DOWNLOADER = config.app.defaults.downloaders.video;
 
@@ -15,10 +15,11 @@ const VIDEO_DOWNLOADER = config.app.defaults.downloaders.video;
  * @param args.params.urls Array of video URLs to download. (required)
  * @param args.params.outputDir Output directory for downloaded videos. (required)
  * @param args.params.opts Service-specific options (optional).
+ * 
  * @throws Error If required fields are missing: services.videoDownloader, params.urls, or params.outputDir.
  * @returns Downloaded video file paths.
  */
-export default async function downloadVideosRun({
+export default async function run({
   id,
   services = {},
   params,
@@ -45,7 +46,7 @@ export default async function downloadVideosRun({
     throw new Error("params.outputDir is required");
   }
 
-  const videoDownloader = await loadVideoDownloader(videoKey);
+  const videoDownloader = await load(videoKey);
   const { downloadVideos } = videoDownloader;
 
   logger.log("info", "downloader/video", id, "Downloading videos...");

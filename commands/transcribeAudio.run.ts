@@ -1,6 +1,6 @@
 import config from "../config";
 import logger from "../services/logger.service";
-import loadTranscriber from "../services/extractors/transcription";
+import load from "../services/extractors/transcription";
 
 const TRANSCRIBER = config.app.defaults.extractors.transcription;
 
@@ -14,6 +14,7 @@ const TRANSCRIBER = config.app.defaults.extractors.transcription;
  * @param args.params Required parameters for transcription.
  * @param args.params.file Path to the audio file to transcribe. (required)
  * @param args.params.opts Service-specific options (optional).
+ * 
  * @throws Error If required fields are missing: services.transcriber or params.file.
  * @returns Transcription result.
  */
@@ -41,7 +42,7 @@ export default async function transcribeAudioRun({
     throw new Error("params.file is required");
   }
 
-  const transcriber = await loadTranscriber(transcriberKey);
+  const transcriber = await load(transcriberKey);
   const { transcribe } = transcriber;
 
   logger.log("info", "transcriber", id, "Transcribing audio...");

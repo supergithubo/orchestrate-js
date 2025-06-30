@@ -163,8 +163,8 @@ Below is an example workflow (see `index.js`) that:
           params: {
             videoPath: context.videoPaths[0],
             outputDir: path.resolve(__dirname, "../../tmp"),
+            frames: 5,
             opts: {
-              frameLimit: 5,
               ffmpegBin: config.app.ffmpegBin,
               ffprobeBin: config.app.ffprobeBin,
               cache: true,
@@ -193,7 +193,7 @@ Below is an example workflow (see `index.js`) that:
   },
   {
     type: "series",
-    command: "analyzeImages",
+    command: "describeImages",
     params: (context: any) => ({
       id: "openai-vision-gpt-4o",
       services: { vision: "openai-vision" },
@@ -212,20 +212,20 @@ Below is an example workflow (see `index.js`) that:
         },
       },
     }),
-    returnsAlias: { analysis: "frameAnalysis" },
+    returnsAlias: { description: "frameAnalysis" },
   },
   {
     type: "series",
-    command: "generateResponse",
+    command: "getResponse",
     params: (context: any) => ({
-      id: "tiktok-recommendation",
+      id: "llm-gpt-4o-mini",
       services: { llm: "openai-response" },
       params: {
+        input: `Given the following video analysis, recommend a TikTok video idea: ${JSON.stringify(
+          context.frameAnalysis
+        )}`,
         opts: {
           apiKey: process.env.OPENAI_API_KEY,
-          input: `Given the following video analysis, recommend a TikTok video idea: ${JSON.stringify(
-            context.frameAnalysis
-          )}`,
           model: "gpt-4o-mini",
         },
       },

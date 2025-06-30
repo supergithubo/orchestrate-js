@@ -103,6 +103,7 @@ async function download(
  * @param urls TikTok URLs
  * @param outputDir Folder path to save videos (required)
  * @param opts Options (must include apiKey; can include cache).
+ * 
  * @returns Promise<string[]> Paths to saved videos
  */
 async function downloadVideos(

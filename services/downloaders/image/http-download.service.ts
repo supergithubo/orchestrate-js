@@ -44,6 +44,7 @@ async function download(url: string, outputDir: string): Promise<string> {
  *
  * @param urls URL or array of image URLs
  * @param outputDir Output folder path (required)
+ * 
  * @returns Promise<string[]> Array of paths to saved images
  */
 async function downloadImages(

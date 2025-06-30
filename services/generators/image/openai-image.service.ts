@@ -7,6 +7,7 @@ const DEFAULT_MODEL = "dall-e-3";
 /**
  * Generate image(s) using OpenAI's image generation API.
  *
+ * @param prompt The prompt for the image (required)
  * @param opts Image generation options (must include apiKey and prompt)
  * @param opts.apiKey OpenAI API key (required; will be stripped before sending)
  * @param opts.prompt The prompt for the image (required)
@@ -15,17 +16,17 @@ const DEFAULT_MODEL = "dall-e-3";
  * @returns Promise<string[]> Array of image URLs or base64 strings (based on response_format)
  * @throws Error If required parameters are missing
  */
-export async function getImageResponse(
+export async function getImage(
+  prompt: string,
   opts: OpenAI.Images.ImageGenerateParams & { apiKey: string }
 ): Promise<string[]> {
   if (!opts.apiKey) throw new Error(`'apiKey' is required`);
-  if (!opts.prompt) throw new Error(`'prompt' is required`);
 
-  const { apiKey, prompt, ...rawPayload } = opts;
+  const { apiKey, ...rawPayload } = opts;
   const payload: OpenAI.Images.ImageGenerateParams = {
-    prompt,
     model: rawPayload.model || DEFAULT_MODEL,
     ...rawPayload,
+    prompt,
   };
 
   const client = new OpenAI({ apiKey });
@@ -47,5 +48,5 @@ export async function getImageResponse(
 }
 
 export default {
-  getImageResponse,
+  getImage,
 };
