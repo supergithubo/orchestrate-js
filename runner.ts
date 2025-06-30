@@ -3,19 +3,25 @@
  *
  * This module provides functions to execute a workflow composed of 'series' and 'parallel' steps.
  * Each step references a command in the 'commands/' directory and passes parameters and collects results in a shared context.
- * Used by index.js to orchestrate the main workflow.
+ * Used by index.ts to orchestrate the main workflow.
  */
-const path = require("path");
+import path from "path";
 
-const logger = require("./services/logger.service");
+export type WorkflowStep = {
+  type: "series" | "parallel";
+  command?: string;
+  params?: any;
+  commands?: WorkflowStep[];
+  returns?: string | string[];
+  returnsAlias?: Record<string, string>;
+};
 
-function checkDuplicateReturns(workflow) {
-  const seen = new Set();
-  const duplicates = new Set();
+export function checkDuplicateReturns(workflow: WorkflowStep[]): void {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
 
-  function checkSeries(step) {
+  function checkSeries(step: WorkflowStep) {
     if (!step.returns) return;
-
     const keys = Array.isArray(step.returns) ? step.returns : [step.returns];
     for (const key of keys) {
       if (seen.has(key)) {
@@ -25,9 +31,8 @@ function checkDuplicateReturns(workflow) {
     }
   }
 
-  function checkParallel(step) {
+  function checkParallel(step: WorkflowStep) {
     if (!Array.isArray(step.commands)) return;
-
     for (const subStep of step.commands) {
       if (subStep.type === "series") {
         checkSeries(subStep);
@@ -46,6 +51,7 @@ function checkDuplicateReturns(workflow) {
   }
 
   if (duplicates.size > 0) {
+    // eslint-disable-next-line no-console
     console.warn("\n⚠️  Duplicate return keys found in workflow:");
     duplicates.forEach((key) =>
       console.warn(` - "${key}" is returned more than once`)
@@ -54,10 +60,12 @@ function checkDuplicateReturns(workflow) {
   }
 }
 
-async function runSeries(step, context) {
+async function runSeries(
+  step: WorkflowStep,
+  context: Record<string, any>
+): Promise<any> {
   const { command, params } = step;
-  const commandPath = path.join(__dirname, "commands", `${command}.run.js`);
-
+  const commandPath = path.join(__dirname, "commands", `${command}.run.ts`);
   let resolvedParams = typeof params === "function" ? params(context) : params;
   if (
     !resolvedParams ||
@@ -69,21 +77,26 @@ async function runSeries(step, context) {
     );
   }
 
-  const commandFn = require(commandPath);
+  const commandModule = await import(commandPath);
+  const commandFn = commandModule.default;
   return await commandFn(resolvedParams);
 }
 
-async function runParallel(step, context) {
+async function runParallel(
+  step: WorkflowStep,
+  context: Record<string, any>
+): Promise<any[]> {
   const results = await Promise.all(
-    step.commands.map((subStep) => runStep(subStep, context))
+    (step.commands || []).map((subStep) => runStep(subStep, context))
   );
-
   return results.flat();
 }
 
-async function runStep(step, context) {
+async function runStep(
+  step: WorkflowStep,
+  context: Record<string, any>
+): Promise<any> {
   const { returns, returnsAlias } = step;
-
   let result;
   if (step.type === "series") {
     result = await runSeries(step, context);
@@ -98,45 +111,30 @@ async function runStep(step, context) {
       context[to] = result[from];
     }
   } else if (returns) {
-    if (Array.isArray(returns)) {
-      returns.forEach((key, i) => {
-        context[key] = result[key] ?? result[i];
-      });
-    } else {
-      context[returns] = result;
+    const keys = Array.isArray(returns) ? returns : [returns];
+    for (const key of keys) {
+      context[key] = result[key];
     }
   }
-
   return result;
 }
 
 /**
  * Runs a workflow definition, executing each step in order and collecting results in context.
- * @param {Array<object>} workflow - The workflow definition (array of steps)
- * @param {object} [initialContext={}] - Initial context to pass to the workflow
- * @returns {Promise<object>} The final context after running the workflow
+ * @param workflow The workflow definition (array of steps)
+ * @param initialContext Initial context to pass to the workflow
+ * @returns The final context after running the workflow
  */
-async function runWorkflow(workflow, initialContext = {}) {
+export async function runWorkflow(
+  workflow: WorkflowStep[],
+  initialContext: Record<string, any> = {}
+): Promise<Record<string, any>> {
   checkDuplicateReturns(workflow);
   const context = { ...initialContext };
-  let idx = 0;
   for (const step of workflow) {
-    logger.log(
-      "info",
-      `workflow-${idx + 1}`,
-      `type`,
-      step.type,
-      `command/s:`,
-      step.type == "series"
-        ? step.command
-        : step.type == "parallel"
-        ? step.commands.map((c) => c.command).join(", ")
-        : `unknown`
-    );
     await runStep(step, context);
-    idx++;
   }
   return context;
 }
 
-module.exports = runWorkflow;
+export default runWorkflow;

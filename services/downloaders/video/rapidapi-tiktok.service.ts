@@ -1,20 +1,23 @@
-// services/downloaders/video/rapidapi-tiktok.service.js
+// services/downloaders/video/rapidapi-tiktok.service.ts
 
-const fs = require("fs/promises");
-const fss = require("fs");
-const path = require("path");
-const axios = require("axios");
-const crypto = require("crypto");
-const { v4: uuid } = require("uuid");
+import axios from "axios";
+import crypto from "crypto";
+import fss from "fs";
+import fs from "fs/promises";
+import path from "path";
+import { v4 as uuid } from "uuid";
 
 /**
  * Get downloadable video URL from TikTok video URL using RapidAPI.
  *
- * @param {string} videoUrl - TikTok video URL
- * @param {string} apiKey - RapidAPI key
- * @returns {Promise<string>} Direct download URL
+ * @param videoUrl TikTok video URL
+ * @param apiKey RapidAPI key
+ * @returns Promise<string> Direct download URL
  */
-async function getDownloadUrl(videoUrl, apiKey) {
+async function getDownloadUrl(
+  videoUrl: string,
+  apiKey: string
+): Promise<string> {
   const options = {
     method: "GET",
     url: "https://tiktok-video-downloader-api.p.rapidapi.com/media",
@@ -38,12 +41,16 @@ async function getDownloadUrl(videoUrl, apiKey) {
 /**
  * Download a single TikTok video to a file.
  *
- * @param {string} videoUrl - TikTok video page URL
- * @param {string} outputDir - Folder where video will be saved (required)
- * @param {object} opts - Options (must include `apiKey`; can include `cache`)
- * @returns {Promise<string>} Path to saved video
+ * @param videoUrl TikTok video page URL
+ * @param outputDir Folder where video will be saved (required)
+ * @param opts Options (must include apiKey; can include cache)
+ * @returns Promise<string> Path to saved video
  */
-async function download(videoUrl, outputDir, opts = {}) {
+async function download(
+  videoUrl: string,
+  outputDir: string,
+  opts: { apiKey: string; cache?: boolean; [key: string]: any } = {} as any
+): Promise<string> {
   if (!/^https?:\/\//.test(videoUrl)) {
     throw new Error(`Invalid TikTok URL: ${videoUrl}`);
   }
@@ -61,7 +68,7 @@ async function download(videoUrl, outputDir, opts = {}) {
   const downloadUrl = await getDownloadUrl(videoUrl, opts.apiKey);
   const ext = path.extname(new URL(downloadUrl).pathname) || ".mp4";
 
-  let filename;
+  let filename: string;
   if (opts.cache === true) {
     filename = `video_${hash}${ext}`;
     const possibleFiles = await fs.readdir(outputDir);
@@ -81,19 +88,10 @@ async function download(videoUrl, outputDir, opts = {}) {
     responseType: "stream",
   });
 
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     response.data.pipe(writer);
-    let error = null;
-    writer.on("error", (err) => {
-      error = err;
-      writer.close();
-      reject(err);
-    });
-    writer.on("close", () => {
-      if (!error) {
-        resolve();
-      }
-    });
+    writer.on("finish", resolve);
+    writer.on("error", reject);
   });
 
   return targetPath;
@@ -102,16 +100,20 @@ async function download(videoUrl, outputDir, opts = {}) {
 /**
  * Download one or more TikTok videos.
  *
- * @param {string|string[]} urls - TikTok URLs
- * @param {string} outputDir - Folder path to save videos (required)
- * @param {object} opts - Options (must include `apiKey`; can include `cache`).
- * @returns {Promise<string[]>} Paths to saved videos
+ * @param urls TikTok URLs
+ * @param outputDir Folder path to save videos (required)
+ * @param opts Options (must include apiKey; can include cache).
+ * @returns Promise<string[]> Paths to saved videos
  */
-async function downloadVideos(urls, outputDir, opts) {
+async function downloadVideos(
+  urls: string | string[],
+  outputDir: string,
+  opts: { apiKey: string; cache?: boolean; [key: string]: any }
+): Promise<string[]> {
   const urlList = Array.isArray(urls) ? urls : [urls];
   return Promise.all(urlList.map((url) => download(url, outputDir, opts)));
 }
 
-module.exports = {
+export default {
   downloadVideos,
 };

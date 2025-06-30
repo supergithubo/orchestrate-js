@@ -1,19 +1,29 @@
-// services/extractors/frame/ffmpeg-frame.service.js
+// services/extractors/frame/ffmpeg-frame.service.ts
 
-const path = require("path");
-const fs = require("fs/promises");
-const { exec, execSync } = require("child_process");
-const crypto = require("crypto");
-const { v4: uuid } = require("uuid");
+import { exec, execSync } from "child_process";
+import crypto from "crypto";
+import fs from "fs/promises";
+import path from "path";
+import { v4 as uuid } from "uuid";
+
+interface ExtractFramesOptions {
+  frameLimit: number;
+  ffmpegBin?: string;
+  ffprobeBin?: string;
+  cache?: boolean;
+  [key: string]: any;
+}
 
 /**
  * Get video duration in seconds using ffprobe.
- *
- * @param {string} filePath - Path to video file
- * @param {object} opts - Options (can include `ffprobeBin`)
- * @returns {number} Duration in seconds
+ * @param filePath Path to video file
+ * @param opts Options (can include ffprobeBin)
+ * @returns Duration in seconds
  */
-function getVideoDuration(filePath, opts = {}) {
+function getVideoDuration(
+  filePath: string,
+  opts: { ffprobeBin?: string } = {}
+): number {
   const cmd = `${
     opts.ffprobeBin || "ffprobe"
   } -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`;
@@ -23,12 +33,14 @@ function getVideoDuration(filePath, opts = {}) {
 
 /**
  * Get video FPS using ffprobe.
- *
- * @param {string} filePath
- * @param {object} opts
- * @returns {number}
+ * @param filePath Path to video file
+ * @param opts Options (can include ffprobeBin)
+ * @returns FPS
  */
-function getVideoFPS(filePath, opts = {}) {
+function getVideoFPS(
+  filePath: string,
+  opts: { ffprobeBin?: string } = {}
+): number {
   const cmd = `${
     opts.ffprobeBin || "ffprobe"
   } -v 0 -select_streams v:0 -show_entries stream=r_frame_rate -of csv=p=0 "${filePath}"`;
@@ -39,19 +51,22 @@ function getVideoFPS(filePath, opts = {}) {
 
 /**
  * Extract N frames from video using ffmpeg.
- *
- * @param {string} videoPath - Path to video file
- * @param {string} outputDir - Base directory to save a unique subfolder of frames
- * @param {object} opts - Options (must include `frameLimit`; can include `ffmpegBin`, `ffprobeBin`, `cache`).
- * @returns {Promise<string[]>} Array of full paths to generated frames
+ * @param videoPath Path to video file
+ * @param outputDir Base directory to save a unique subfolder of frames
+ * @param opts Options (must include frameLimit; can include ffmpegBin, ffprobeBin, cache)
+ * @returns Promise of array of full paths to generated frames
  */
-async function extractFrames(videoPath, outputDir, opts = {}) {
+export async function extractFrames(
+  videoPath: string,
+  outputDir: string,
+  opts: ExtractFramesOptions
+): Promise<string[]> {
   if (!opts.frameLimit || typeof opts.frameLimit !== "number") {
     throw new Error(`'frameLimit' must be a number in opts`);
   }
 
-  let cacheDir;
-  let cacheFiles = [];
+  let cacheDir: string | undefined;
+  let cacheFiles: string[] = [];
   if (opts.cache === true) {
     const absPath = path.resolve(videoPath);
     const hash = crypto
@@ -69,7 +84,7 @@ async function extractFrames(videoPath, outputDir, opts = {}) {
     if (exists) {
       cacheFiles = await fs.readdir(cacheDir);
       if (cacheFiles.length === opts.frameLimit) {
-        return cacheFiles.map((f) => path.join(cacheDir, f));
+        return cacheFiles.map((f) => path.join(cacheDir!, f));
       }
     }
   }
@@ -94,18 +109,17 @@ async function extractFrames(videoPath, outputDir, opts = {}) {
 
   const command = `${ffmpeg} -i "${videoPath}" -vf "${vf}" -frames:v ${opts.frameLimit} "${outputPattern}" -hide_banner -loglevel error`;
 
-  return new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     exec(command, (err) => {
       if (err) return reject(new Error(`ffmpeg error: ${err.message}`));
-
-      fs.readdir(uniqueDir)
-        .then((files) => files.map((f) => path.join(uniqueDir, f)))
-        .then(resolve)
-        .catch(reject);
+      resolve();
     });
   });
+
+  const files = await fs.readdir(uniqueDir);
+  return files.map((f) => path.join(uniqueDir, f));
 }
 
-module.exports = {
+export default {
   extractFrames,
 };

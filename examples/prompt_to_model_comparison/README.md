@@ -38,7 +38,7 @@ This workflow is designed to be accessible and modifiable—swap out models, cha
 ## `index.js` Example
 
 ```js
-const workflow = [
+[
   {
     type: "series",
     command: "generateResponse",
@@ -61,7 +61,7 @@ const workflow = [
       {
         type: "series",
         command: "generateImageResponse",
-        params: (context) => ({
+        params: (context: any) => ({
           id: "openai-image-dall-e-3",
           services: { imageGenerator: "openai-image" },
           params: {
@@ -79,7 +79,7 @@ const workflow = [
       {
         type: "series",
         command: "generateImageResponse",
-        params: (context) => ({
+        params: (context: any) => ({
           id: "openai-image-dall-e-2",
           services: { imageGenerator: "openai-image" },
           params: {
@@ -99,7 +99,7 @@ const workflow = [
   {
     type: "series",
     command: "downloadImages",
-    params: (context) => ({
+    params: (context: any) => ({
       id: "http-download",
       services: { imageDownloader: "http-download" },
       params: {
@@ -112,20 +112,22 @@ const workflow = [
   {
     type: "series",
     command: "analyzeImages",
-    params: (context) => ({
-      id: "openai-vision-gpt-4o",
-      services: {
-        vision: "openai-vision",
-      },
+    params: (context: any) => ({
+      id: "openai-vision",
+      services: { vision: "openai-vision" },
       params: {
         images: context.imagePaths,
         opts: {
           apiKey: process.env.OPENAI_API_KEY,
-          model: "gpt-4o",
+          model: "gpt-4o-mini",
           messages: [
-            `Compare the two images and tell me which: \n` +
-              `1) One better represents this prompt:\n"${context.prompt}" \n` +
-              `2) One is more realistic? \n Explain both why`,
+            {
+              role: "user",
+              content:
+                `Compare the two images and tell me which: \n` +
+                `1) One better represents this prompt:\n"${context.prompt}" \n` +
+                `2) One is more realistic? \n Explain both why`,
+            },
           ],
         },
       },

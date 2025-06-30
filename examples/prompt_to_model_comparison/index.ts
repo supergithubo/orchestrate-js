@@ -1,10 +1,12 @@
-const path = require("path");
-require("dotenv").config();
+import dotenv from "dotenv";
+import path from "path";
+dotenv.config();
 
-const runWorkflow = require("../../runner");
-const logger = require("../../services/logger.service");
+import type { WorkflowStep } from "../../runner";
+import runWorkflow from "../../runner";
+import logger from "../../services/logger.service";
 
-const workflow = [
+const workflow: WorkflowStep[] = [
   {
     type: "series",
     command: "generateResponse",
@@ -27,7 +29,7 @@ const workflow = [
       {
         type: "series",
         command: "generateImageResponse",
-        params: (context) => ({
+        params: (context: any) => ({
           id: "openai-image-dall-e-3",
           services: { imageGenerator: "openai-image" },
           params: {
@@ -45,7 +47,7 @@ const workflow = [
       {
         type: "series",
         command: "generateImageResponse",
-        params: (context) => ({
+        params: (context: any) => ({
           id: "openai-image-dall-e-2",
           services: { imageGenerator: "openai-image" },
           params: {
@@ -65,7 +67,7 @@ const workflow = [
   {
     type: "series",
     command: "downloadImages",
-    params: (context) => ({
+    params: (context: any) => ({
       id: "http-download",
       services: { imageDownloader: "http-download" },
       params: {
@@ -78,20 +80,22 @@ const workflow = [
   {
     type: "series",
     command: "analyzeImages",
-    params: (context) => ({
-      id: "openai-vision-gpt-4o",
-      services: {
-        vision: "openai-vision",
-      },
+    params: (context: any) => ({
+      id: "openai-vision",
+      services: { vision: "openai-vision" },
       params: {
         images: context.imagePaths,
         opts: {
           apiKey: process.env.OPENAI_API_KEY,
-          model: "gpt-4o",
+          model: "gpt-4o-mini",
           messages: [
-            `Compare the two images and tell me which: \n` +
-              `1) One better represents this prompt:\n"${context.prompt}" \n` +
-              `2) One is more realistic? \n Explain both why`,
+            {
+              role: "user",
+              content:
+                `Compare the two images and tell me which: \n` +
+                `1) One better represents this prompt:\n"${context.prompt}" \n` +
+                `2) One is more realistic? \n Explain both why`,
+            },
           ],
         },
       },
@@ -102,10 +106,10 @@ const workflow = [
 
 (async () => {
   try {
-    logger.log("info", "Starting workflow...");
+    logger.log("info", "Starting prompt-to-model-comparison workflow...");
     const result = await runWorkflow(workflow, {});
     console.log(result);
-  } catch (err) {
+  } catch (err: any) {
     logger.logError(err, "Error in workflow:");
   }
 })();

@@ -1,12 +1,13 @@
-const path = require("path");
+import dotenv from "dotenv";
+import path from "path";
+dotenv.config();
 
-require("dotenv").config();
+import config from "../../config";
+import type { WorkflowStep } from "../../runner";
+import runWorkflow from "../../runner";
+import logger from "../../services/logger.service";
 
-const config = require("../../config");
-const runWorkflow = require("../../runner");
-const logger = require("../../services/logger.service");
-
-const workflow = [
+const workflow: WorkflowStep[] = [
   {
     type: "series",
     command: "downloadVideos",
@@ -32,7 +33,7 @@ const workflow = [
       {
         type: "series",
         command: "extractFrames",
-        params: (context) => ({
+        params: (context: any) => ({
           id: "ffmpeg-frame",
           services: { frameExtractor: "ffmpeg-frame" },
           params: {
@@ -51,7 +52,7 @@ const workflow = [
       {
         type: "series",
         command: "transcribeAudio",
-        params: (context) => ({
+        params: (context: any) => ({
           id: "openai-whisper",
           services: { transcriber: "openai-whisper" },
           params: {
@@ -69,7 +70,7 @@ const workflow = [
   {
     type: "series",
     command: "analyzeImages",
-    params: (context) => ({
+    params: (context: any) => ({
       id: "openai-vision-gpt-4o",
       services: { vision: "openai-vision" },
       params: {
@@ -78,10 +79,11 @@ const workflow = [
           apiKey: process.env.OPENAI_API_KEY,
           model: "gpt-4o",
           messages: [
-            "Describe what is happening in these video frames in sequence. " +
-              "Do not use numbering or labels like 'Frame 1'. " +
-              "Prefix each frame's description with '~' and put each on a new line. " +
-              "Do not include any other text before or after the list.",
+            {
+              role: "user",
+              content:
+                "You are an expert video content analyst. Analyze the video frames for content, context, and visual details.",
+            },
           ],
         },
       },
@@ -91,27 +93,16 @@ const workflow = [
   {
     type: "series",
     command: "generateResponse",
-    params: (context) => ({
-      id: "openai-completion-gpt-4o",
-      services: { llm: "openai-completion" },
+    params: (context: any) => ({
+      id: "tiktok-recommendation",
+      services: { llm: "openai-response" },
       params: {
         opts: {
           apiKey: process.env.OPENAI_API_KEY,
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are an expert content strategist for short-form videos.",
-            },
-            {
-              role: "user",
-              content:
-                `Here is the transcript of a TikTok video:\n\n${context.transcription}\n\n` +
-                `Visual analysis of the frames:\n${context.frameAnalysis}\n\n` +
-                `Based on this, summarize the narrative and suggest 3 alternative but related concepts that could perform well.`,
-            },
-          ],
-          model: "gpt-4o",
+          input: `Given the following video analysis, recommend a TikTok video idea: ${JSON.stringify(
+            context.frameAnalysis
+          )}`,
+          model: "gpt-4o-mini",
         },
       },
     }),
@@ -121,10 +112,10 @@ const workflow = [
 
 (async () => {
   try {
-    logger.log("info", "Starting workflow...");
+    logger.log("info", "Starting tiktok-video-recommendation workflow...");
     const result = await runWorkflow(workflow, {});
     console.log(result);
-  } catch (err) {
+  } catch (err: any) {
     logger.logError(err, "Error in workflow:");
   }
 })();

@@ -124,105 +124,113 @@ Workflows in OrchestrateJS are defined as arrays of steps, which can be run in s
 
 Below is an example workflow (see `index.js`) that:
 
-1. Downloads a TikTok video
-2. Transcribes its audio and extracts frames in parallel
-3. Analyzes the frames
-4. Generates new content concepts
+- Video Download: TikTok downloader via RapidAPI or similar
+- Frame Extraction: FFmpeg or equivalent
+- Audio Transcription: OpenAI Whisper
+- Vision Analysis: OpenAI Vision (GPT-4o)
+- Text Summarization: OpenAI GPT-4o or other LLM
 
 ```js
 [
   {
     type: "series",
-    command: "generateResponse",
+    command: "downloadVideos",
     params: {
-      id: "openai-response-gpt-4o-mini",
-      services: { llm: "openai-response" },
+      id: "rapidapi-tiktok",
+      services: { videoDownloader: "rapidapi-tiktok" },
       params: {
+        urls: [
+          "https://www.tiktok.com/@aigenerationd1z/video/7489079990118599958",
+        ],
+        outputDir: path.resolve(__dirname, "../../tmp"),
         opts: {
-          apiKey: process.env.OPENAI_API_KEY,
-          input: "Give me a creative image prompt about the sky.",
-          model: "gpt-4o-mini",
+          apiKey: process.env.RAPIDAPI_KEY,
+          cache: true,
         },
       },
     },
-    returnsAlias: { response: "prompt" },
+    returns: ["videoPaths"],
   },
   {
     type: "parallel",
     commands: [
       {
         type: "series",
-        command: "generateImageResponse",
-        params: (context) => ({
-          id: "openai-image-dall-e-3",
-          services: { imageGenerator: "openai-image" },
+        command: "extractFrames",
+        params: (context: any) => ({
+          id: "ffmpeg-frame",
+          services: { frameExtractor: "ffmpeg-frame" },
           params: {
+            videoPath: context.videoPaths[0],
+            outputDir: path.resolve(__dirname, "../../tmp"),
             opts: {
-              apiKey: process.env.OPENAI_API_KEY,
-              prompt: context.prompt,
-              model: "dall-e-3",
-              size: "1024x1024",
-              response_format: "url",
+              frameLimit: 5,
+              ffmpegBin: config.app.ffmpegBin,
+              ffprobeBin: config.app.ffprobeBin,
+              cache: true,
             },
           },
         }),
-        returnsAlias: { images: "dall-e-3" },
+        returns: ["framePaths"],
       },
       {
         type: "series",
-        command: "generateImageResponse",
-        params: (context) => ({
-          id: "openai-image-dall-e-2",
-          services: { imageGenerator: "openai-image" },
+        command: "transcribeAudio",
+        params: (context: any) => ({
+          id: "openai-whisper",
+          services: { transcriber: "openai-whisper" },
           params: {
+            file: context.videoPaths[0],
             opts: {
               apiKey: process.env.OPENAI_API_KEY,
-              prompt: context.prompt,
-              model: "dall-e-2",
-              size: "1024x1024",
-              response_format: "url",
+              model: "whisper-1",
             },
           },
         }),
-        returnsAlias: { images: "dall-e-2" },
+        returns: ["transcription"],
       },
     ],
   },
   {
     type: "series",
-    command: "downloadImages",
-    params: (context) => ({
-      id: "http-download",
-      services: { imageDownloader: "http-download" },
-      params: {
-        urls: [context["dall-e-3"]?.[0], context["dall-e-2"]?.[0]],
-        outputDir: path.resolve(__dirname, "../../tmp"),
-      },
-    }),
-    returns: ["imagePaths"],
-  },
-  {
-    type: "series",
     command: "analyzeImages",
-    params: (context) => ({
+    params: (context: any) => ({
       id: "openai-vision-gpt-4o",
-      services: {
-        vision: "openai-vision",
-      },
+      services: { vision: "openai-vision" },
       params: {
-        images: context.imagePaths,
+        images: context.framePaths,
         opts: {
           apiKey: process.env.OPENAI_API_KEY,
           model: "gpt-4o",
           messages: [
-            `Compare the two images and tell me which: \n` +
-              `1) One better represents this prompt:\n"${context.prompt}" \n` +
-              `2) One is more realistic? \n Explain both why`,
+            {
+              role: "user",
+              content:
+                "You are an expert video content analyst. Analyze the video frames for content, context, and visual details.",
+            },
           ],
         },
       },
     }),
-    returnsAlias: { analysis: "visionAnalysis" },
+    returnsAlias: { analysis: "frameAnalysis" },
+  },
+  {
+    type: "series",
+    command: "generateResponse",
+    params: (context: any) => ({
+      id: "tiktok-recommendation",
+      services: { llm: "openai-response" },
+      params: {
+        opts: {
+          apiKey: process.env.OPENAI_API_KEY,
+          input: `Given the following video analysis, recommend a TikTok video idea: ${JSON.stringify(
+            context.frameAnalysis
+          )}`,
+          model: "gpt-4o-mini",
+        },
+      },
+    }),
+    returnsAlias: { response: "suggestion" },
   },
 ];
 ```

@@ -4,6 +4,9 @@
   "description": "Developer-focused workflow automation/orchestration framework. Define, run, and extend complex multi-step workflows in code.",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
+    "dev": "npx ts-node",
+    "deploy": "echo \"Deploy script not implemented yet\"",
     "test": "jest",
     "test:coverage": "jest --coverage"
   },
@@ -16,6 +19,9 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "jest": "^29.7.0"
+    "@types/node": "^24.0.7",
+    "jest": "^29.7.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }

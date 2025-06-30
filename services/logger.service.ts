@@ -1,15 +1,13 @@
-// services/logger.service.js
-
-const chalk = require("chalk");
+import chalk from "chalk";
 
 /**
- * Logs a message with a given level and context.
- * @param {"info"|"warn"|"error"|"debug"} level - Log level
- * @param {...any} args - Log message parts
+ * Logs a message with timestamp, level, and formatted arguments.
+ * @param level Log level (info, warn, error, debug, etc.)
+ * @param args Arguments to log
  */
-function log(level = "info", ...args) {
+export function log(level: string, ...args: any[]): void {
   const timestamp = chalk.gray(`[${new Date().toISOString()}]`);
-  let levelTag;
+  let levelTag: string;
   switch (level) {
     case "info":
       levelTag = chalk.cyan("INFO");
@@ -63,10 +61,10 @@ function log(level = "info", ...args) {
 
 /**
  * Logs an error with stack trace if available.
- * @param {Error|string} error - Error object or message
- * @param {...any} context - Additional context
+ * @param error Error object or message
+ * @param context Additional context
  */
-function logError(error, ...context) {
+export function logError(error: Error | string, ...context: any[]): void {
   const timestamp = chalk.gray(`[${new Date().toISOString()}]`);
   console.log(error);
   let message = error instanceof Error ? error.stack || error.message : error;
@@ -77,7 +75,7 @@ function logError(error, ...context) {
   console.error(`${timestamp} [${chalk.red("ERROR")}] ${message}`);
 }
 
-module.exports = {
+export default {
   log,
   logError,
 };

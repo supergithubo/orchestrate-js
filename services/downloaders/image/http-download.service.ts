@@ -1,19 +1,18 @@
-// services/downloaders/image/http-download.service.js
+// services/downloaders/image/http-download.service.ts
 
-const fs = require("fs/promises");
-const path = require("path");
-const axios = require("axios");
-const crypto = require("crypto");
-const { v4: uuid } = require("uuid");
+import axios from "axios";
+import crypto from "crypto";
+import fs from "fs/promises";
+import path from "path";
 
 /**
  * Internal function to download a single remote image to a file.
  *
- * @param {string} url - Image URL
- * @param {string} outputDir - Folder where image will be saved (required)
- * @returns {Promise<string>} Path to saved image
+ * @param url Image URL
+ * @param outputDir Folder where image will be saved (required)
+ * @returns Promise<string> Path to saved image
  */
-async function download(url, outputDir) {
+async function download(url: string, outputDir: string): Promise<string> {
   if (!/^https?:\/\//.test(url)) {
     throw new Error(`Invalid URL: ${url}`);
   }
@@ -43,15 +42,18 @@ async function download(url, outputDir) {
 /**
  * Downloads one or more remote images to a folder.
  *
- * @param {string|string[]} urls - URL or array of image URLs
- * @param {string} outputDir - Output folder path (required)
- * @returns {Promise<string[]>} Array of paths to saved images
+ * @param urls URL or array of image URLs
+ * @param outputDir Output folder path (required)
+ * @returns Promise<string[]> Array of paths to saved images
  */
-async function downloadImages(urls, outputDir) {
+async function downloadImages(
+  urls: string | string[],
+  outputDir: string
+): Promise<string[]> {
   const urlList = Array.isArray(urls) ? urls : [urls];
   return Promise.all(urlList.map((url) => download(url, outputDir)));
 }
 
-module.exports = {
+export default {
   downloadImages,
 };
