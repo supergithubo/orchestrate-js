@@ -2,9 +2,7 @@
 
 import { getLoaderExtension } from "../../utils.service";
 
-export default async function load(
-  serviceKey: string
-): Promise<any> {
+export default async function load(serviceKey: string): Promise<any> {
   let service: any;
   const ext = getLoaderExtension();
   try {
