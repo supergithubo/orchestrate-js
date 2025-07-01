@@ -11,6 +11,7 @@ export type AppConfig = {
       generators: { image: string; video: string };
       extractors: { frame: string; transcription: string };
       downloaders: { image: string; video: string };
+      converters: { imageToVideo: string };
     };
   };
 };
@@ -25,6 +26,7 @@ const baseConfig: AppConfig = {
       generators: { image: "openai-image", video: "" },
       extractors: { frame: "ffmpeg-frame", transcription: "openai-whisper" },
       downloaders: { image: "http-download", video: "rapidapi-tiktok" },
+      converters: { imageToVideo: "runway-ml" },
     },
   },
 };

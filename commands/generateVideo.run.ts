@@ -1,6 +1,6 @@
 import config from "../config";
-import logger from "../services/logger.service";
 import load from "../services/generators/video";
+import logger from "../services/logger.service";
 
 const VIDEO_GENERATOR = config.app.defaults.generators.video;
 
@@ -12,9 +12,9 @@ const VIDEO_GENERATOR = config.app.defaults.generators.video;
  * @param args.services Must include { videoGenerator: string } specifying the video generator service key (e.g., "runway-ml").
  *   If not provided, falls back to config.app.defaults.generators.video.
  * @param args.params Required parameters for video generation.
- * @param args.input Prompt message to generate videos from. (required)
+ * @param args.prompt Prompt message to generate videos from. (required)
  * @param args.params.opts Service-specific options (optional).
- * 
+ *
  * @throws Error If required fields are missing: services.videoGenerator.
  * @returns Generated video results.
  */
@@ -25,7 +25,7 @@ export default async function run({
 }: {
   id: string;
   services?: { videoGenerator?: string };
-  params: { input: string; opts?: any };
+  params: { prompt: string; opts?: any };
 }): Promise<{ videos: any[] }> {
   const videoKey = services?.videoGenerator || VIDEO_GENERATOR;
   if (!videoKey) {
@@ -37,8 +37,8 @@ export default async function run({
   if (!params || typeof params !== "object") {
     throw new Error("params object is required");
   }
-  const { input, opts } = params;
-  if (!input) {
+  const { prompt, opts } = params;
+  if (!prompt) {
     throw new Error("params.prompt is required");
   }
   if (!opts) {

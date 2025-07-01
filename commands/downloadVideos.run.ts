@@ -15,7 +15,7 @@ const VIDEO_DOWNLOADER = config.app.defaults.downloaders.video;
  * @param args.params.urls Array of video URLs to download. (required)
  * @param args.params.outputDir Output directory for downloaded videos. (required)
  * @param args.params.opts Service-specific options (optional).
- * 
+ *
  * @throws Error If required fields are missing: services.videoDownloader, params.urls, or params.outputDir.
  * @returns Downloaded video file paths.
  */
