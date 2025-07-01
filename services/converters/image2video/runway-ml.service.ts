@@ -8,6 +8,8 @@ import * as fs from "fs";
 import path from "path";
 
 const DEFAULT_MODEL = "gen4_turbo";
+const DEFAULT_RATIO = "960:960";
+const DEFAULT_DURATION = 5;
 
 /**
  * Generate video(s) using RunwayML's image-to-video API and download them locally.
@@ -30,12 +32,12 @@ async function imageToVideo(
 ): Promise<string[]> {
   if (!opts.apiKey) throw new Error(`'apiKey' is required`);
 
-  console.log(image, prompt, outputDir, opts);
-
   const { apiKey, ...rawPayload } = opts;
   const payload: ImageToVideoCreateParams = {
     ...rawPayload,
     model: rawPayload.model || DEFAULT_MODEL,
+    ratio: rawPayload.ratio || DEFAULT_RATIO,
+    duration: rawPayload.duration || DEFAULT_DURATION,
     promptImage: `data:image/jpeg;base64,${fs
       .readFileSync(image)
       .toString("base64")}`,
@@ -54,8 +56,6 @@ async function imageToVideo(
   if (!response.output) {
     throw new Error("No output returned from Runway API");
   }
-
-  console.log(response.output);
 
   await fs.promises.mkdir(outputDir, { recursive: true });
   const savedPaths: string[] = [];
