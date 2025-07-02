@@ -10,11 +10,11 @@ const workflow: WorkflowStep[] = [
   {
     type: "series",
     command: "describeImages",
-    params: {
+    params: (context: any) => ({
       id: "openai-vision",
       services: { vision: "openai-vision" },
       params: {
-        images: ["/home/super/Repo/orchestrate-js/tmp/sample.png"],
+        images: [context.image],
         opts: {
           apiKey: process.env.OPENAI_API_KEY,
           model: "gpt-4o",
@@ -22,27 +22,33 @@ const workflow: WorkflowStep[] = [
             {
               role: "user",
               content:
-                `You are an expert video specialist, make me a prompt to generate a 960x960 5-second video from the image`,
+                `You are a master anime filmmaker and visual director.` +
+                `Based on the image, write a prompt (less than 900 characters) to generate a video animation. ` +
+                `The animation should feature subtle ambient motion such as soft lighting shifts, gentle parallax for depth, and calm environmental movement. ` +
+                `The result should evoke a peaceful, cinematic, and nostalgic atmosphere. ` +
+                `The scene must retain the hand-drawn aesthetic and vibrant colors of the original image. ` +
+                `The prompt should be clean, detailed, and suitable for an image-to-video AI model.`,
             },
           ],
         },
       },
-    },
+    }),
     returnsAlias: { description: "prompt" },
   },
   {
     type: "series",
-    command: "generateVideoFromImageX",
+    command: "generateVideoFromImage",
     params: (context: any) => ({
       services: { image2videoConverter: "runway-ml" },
       params: {
-        image: "/home/super/Repo/orchestrate-js/tmp/sample.png",
-        prompt: context.prompt,
+        image: context.image,
+        prompt: context.prompt[0],
         outputDir: path.resolve(__dirname, "../../tmp"),
         opts: {
           apiKey: process.env.RUNWAYML_API_KEY,
           model: "gen4_turbo",
-          ratio: "960:960",
+          ratio: "832:1104",
+          contentModeration: { publicFigureThreshold: "low" },
           duration: 5,
         },
       },
@@ -55,7 +61,9 @@ const workflow: WorkflowStep[] = [
 (async () => {
   try {
     logger.log("info", "Starting workflow...");
-    const result = await runWorkflow(workflow, {});
+    const result = await runWorkflow(workflow, {
+      image: path.resolve(__dirname, "../../tmp/sample.png"),
+    });
     console.log(result);
   } catch (err: any) {
     logger.logError(err, "Error in workflow:");

@@ -33,6 +33,7 @@ async function imageToVideo(
   if (!opts.apiKey) throw new Error(`'apiKey' is required`);
 
   const { apiKey, ...rawPayload } = opts;
+
   const payload: ImageToVideoCreateParams = {
     ...rawPayload,
     model: rawPayload.model || DEFAULT_MODEL,
