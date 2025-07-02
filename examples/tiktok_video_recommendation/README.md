@@ -2,7 +2,7 @@
 
 Want to quickly enhance, analyze, and summarize TikTok videos with the help of AI? This workflow is designed for creators, analysts, and anyone interested in automating video improvement and content extraction—no manual editing or technical expertise required!
 
-## 🤖 What This Workflow Does
+## What This Workflow Does
 
 1. **Download a TikTok Video**  
    Automatically fetches a TikTok video from a provided URL using a video downloader service.
@@ -19,7 +19,7 @@ Want to quickly enhance, analyze, and summarize TikTok videos with the help of A
 5. **Summarize and Enhance Content**  
    Uses a language model (LLM) to generate summaries, insights, or creative enhancements based on the video content and transcriptions.
 
-## 🧱 Commands and Models Used
+## Commands and Models Used
 
 - Video Download: TikTok downloader via RapidAPI or similar
 - Frame Extraction: FFmpeg or equivalent
@@ -31,7 +31,7 @@ This workflow is modular and can be adapted to other video platforms or extended
 
 ## Example Workflow Structure
 
-```js
+```ts
 const workflow = [
   {
     type: "series",

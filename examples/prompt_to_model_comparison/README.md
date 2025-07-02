@@ -8,7 +8,7 @@ Do you ever want to create amazing AI images, but aren't sure where to start or 
 
 This example shows how you can automate the entire process—from prompt generation to image creation and analysis—so you can focus on exploring and enjoying creative results, no matter your experience or inspiration level.
 
-## 🤖 What This Workflow Does
+## What This Workflow Does
 
 1. **AI-Generated Prompts**  
    Provide a simple idea (like "the sky") and let GPT-4o-mini generate a rich, creative image prompt for you.
@@ -25,7 +25,7 @@ This example shows how you can automate the entire process—from prompt generat
    - Which image is more realistic
    - The reasoning behind its evaluation
 
-## 🧱 Commands and Models Used
+## Commands and Models Used
 
 - OpenAI APIs
   - Chat Response: `gpt-4o-mini`
@@ -37,7 +37,7 @@ This workflow is designed to be accessible and modifiable—swap out models, cha
 
 ## `index.js` Example
 
-```js
+```ts
 [
   {
     type: "series",
