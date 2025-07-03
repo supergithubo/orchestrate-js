@@ -1,6 +1,6 @@
 # OrchestrateJS
 
-OrchestrateJS is a **developer-first workflow automation/orchestration framework** for building powerful, flexible, and composable automations in code. 
+OrchestrateJS is a **developer-first workflow automation/orchestration framework** for building powerful, flexible, and composable automations in code.
 
 > **Inspired by** [n8n](https://app.n8n.cloud/), [Make.com](https://www.make.com/en), and [Zapier](https://zapier.com/workflows), OrchestrateJS brings the power and flexibility of code-first workflow automation to developers who want full control, extensibility, and composability.
 
@@ -19,6 +19,7 @@ Unlike visual workflow builders, OrchestrateJS lets you define, run, and extend 
 - Explore the [`examples/`](./examples) folder for ready-to-run workflows:
   - **[prompt_to_model_comparison](./examples/prompt_to_model_comparison/README.md):** Automatically generate creative prompts and compare outputs from multiple AI image models.
   - **[tiktok_video_enhancer](./examples/tiktok_video_enhancer/README.md):** Analyze, transcribe, and summarize TikTok videos using AI (download, extract frames, transcribe audio, analyze, summarize).
+  - **[image_to_video_helper](./examples/image_to_video_helper/README.md):** Generate videos from images using AI models, with helpers for prompt and output management.
 - Use these as templates to build your own automations!
 
 ## How It Works
