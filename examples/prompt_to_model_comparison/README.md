@@ -41,98 +41,98 @@ This workflow is designed to be accessible and modifiable—swap out models, cha
 [
   {
     type: "series",
-    command: "getResponse",
-    params: {
-      id: "openai-response-gpt-4o-mini",
-      services: { llm: "openai-response" },
-      params: {
-        input: "Give me a creative image prompt about the sky.",
-        opts: {
-          apiKey: process.env.OPENAI_API_KEY,
-          model: "gpt-4o-mini",
-        },
-      },
-    },
-    returnsAlias: { response: "prompt" },
-  },
-  {
-    type: "parallel",
     commands: [
       {
-        type: "series",
-        command: "generateImage",
-        params: (context: any) => ({
-          id: "openai-image-dall-e-3",
-          services: { imageGenerator: "openai-image" },
+        command: "getResponse",
+        params: {
+          id: "openai-response-gpt-4o-mini",
+          services: { llm: "openai-response" },
           params: {
-            prompt: context.prompt,
+            input: "Give me a creative image prompt about the sky.",
             opts: {
               apiKey: process.env.OPENAI_API_KEY,
-              model: "dall-e-3",
-              size: "1024x1024",
-              response_format: "url",
+              model: "gpt-4o-mini",
             },
           },
-        }),
-        returnsAlias: { images: "dall-e-3" },
+        },
+        returnsAlias: { response: "prompt" },
       },
       {
-        type: "series",
-        command: "generateImage",
+        type: "parallel",
+        commands: [
+          {
+            command: "generateImage",
+            params: (context: any) => ({
+              id: "openai-image-dall-e-3",
+              services: { imageGenerator: "openai-image" },
+              params: {
+                prompt: context.prompt,
+                opts: {
+                  apiKey: process.env.OPENAI_API_KEY,
+                  model: "dall-e-3",
+                  size: "1024x1024",
+                  response_format: "url",
+                },
+              },
+            }),
+            returnsAlias: { images: "dall-e-3" },
+          },
+          {
+            command: "generateImage",
+            params: (context: any) => ({
+              id: "openai-image-dall-e-2",
+              services: { imageGenerator: "openai-image" },
+              params: {
+                prompt: context.prompt,
+                opts: {
+                  apiKey: process.env.OPENAI_API_KEY,
+                  model: "dall-e-2",
+                  size: "1024x1024",
+                  response_format: "url",
+                },
+              },
+            }),
+            returnsAlias: { images: "dall-e-2" },
+          },
+        ],
+      },
+      {
+        command: "downloadImages",
         params: (context: any) => ({
-          id: "openai-image-dall-e-2",
-          services: { imageGenerator: "openai-image" },
+          id: "http-download",
+          services: { imageDownloader: "http-download" },
           params: {
-            prompt: context.prompt,
+            urls: [context["dall-e-3"]?.[0], context["dall-e-2"]?.[0]],
+            outputDir: path.resolve(__dirname, "../../tmp"),
+          },
+        }),
+        returns: ["imagePaths"],
+      },
+      {
+        command: "describeImages",
+        params: (context: any) => ({
+          id: "openai-vision",
+          services: { vision: "openai-vision" },
+          params: {
+            images: context.imagePaths,
             opts: {
               apiKey: process.env.OPENAI_API_KEY,
-              model: "dall-e-2",
-              size: "1024x1024",
-              response_format: "url",
+              model: "gpt-4o-mini",
+              messages: [
+                {
+                  role: "user",
+                  content:
+                    `Compare the two images and tell me which: \n` +
+                    `1) One better represents this prompt:\n"${context.prompt}" \n` +
+                    `2) One is more realistic? \n Explain both why`,
+                },
+              ],
             },
           },
         }),
-        returnsAlias: { images: "dall-e-2" },
+        returnsAlias: { description: "visionAnalysis" },
       },
     ],
-  },
-  {
-    type: "series",
-    command: "downloadImages",
-    params: (context: any) => ({
-      id: "http-download",
-      services: { imageDownloader: "http-download" },
-      params: {
-        urls: [context["dall-e-3"]?.[0], context["dall-e-2"]?.[0]],
-        outputDir: path.resolve(__dirname, "../../tmp"),
-      },
-    }),
-    returns: ["imagePaths"],
-  },
-  {
-    type: "series",
-    command: "describeImages",
-    params: (context: any) => ({
-      id: "openai-vision",
-      services: { vision: "openai-vision" },
-      params: {
-        images: context.imagePaths,
-        opts: {
-          apiKey: process.env.OPENAI_API_KEY,
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "user",
-              content:
-                `Compare the two images and tell me which: \n` +
-                `1) One better represents this prompt:\n"${context.prompt}" \n` +
-                `2) One is more realistic? \n Explain both why`,
-            },
-          ],
-        },
-      },
-    }),
-    returnsAlias: { description: "visionAnalysis" },
   },
 ];
 ```

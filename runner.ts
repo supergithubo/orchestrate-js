@@ -8,7 +8,7 @@
 import path from "path";
 
 export type WorkflowStep = {
-  type: "series" | "parallel";
+  type?: "series" | "parallel";
   command?: string;
   params?: any;
   commands?: WorkflowStep[];
@@ -64,22 +64,36 @@ async function runSeries(
   step: WorkflowStep,
   context: Record<string, any>
 ): Promise<any> {
-  const { command, params } = step;
-  const commandPath = path.join(__dirname, "commands", `${command}.run.ts`);
-  let resolvedParams = typeof params === "function" ? params(context) : params;
-  if (
-    !resolvedParams ||
-    typeof resolvedParams !== "object" ||
-    !("id" in resolvedParams && "params" in resolvedParams)
-  ) {
+  if (Array.isArray(step.commands) && step.commands.length > 0) {
+    let lastResult;
+    for (const subStep of step.commands) {
+      lastResult = await runStep(subStep, context);
+    }
+    return lastResult;
+  } else if (step.command) {
+    const { command, params } = step;
+    const commandParts = command.split("/");
+    const commandPath =
+      path.join(__dirname, "commands", ...commandParts) + ".run.ts";
+    let resolvedParams =
+      typeof params === "function" ? params(context) : params;
+    if (
+      !resolvedParams ||
+      typeof resolvedParams !== "object" ||
+      !("id" in resolvedParams && "params" in resolvedParams)
+    ) {
+      throw new Error(
+        "Command params must be in the form { id, [services], params }"
+      );
+    }
+    const commandModule = await import(commandPath);
+    const commandFn = commandModule.default;
+    return await commandFn(resolvedParams);
+  } else {
     throw new Error(
-      "Command params must be in the form { id, services, params }"
+      "A 'series' step must have either a 'commands' array or a 'command' string."
     );
   }
-
-  const commandModule = await import(commandPath);
-  const commandFn = commandModule.default;
-  return await commandFn(resolvedParams);
 }
 
 async function runParallel(
@@ -98,12 +112,16 @@ async function runStep(
 ): Promise<any> {
   const { returns, returnsAlias } = step;
   let result;
-  if (step.type === "series") {
+  let stepType = step.type;
+  if (!stepType && step.command) {
+    stepType = "series";
+  }
+  if (stepType === "series") {
     result = await runSeries(step, context);
-  } else if (step.type === "parallel") {
+  } else if (stepType === "parallel") {
     result = await runParallel(step, context);
   } else {
-    throw new Error(`Unknown step type: ${step.type}`);
+    throw new Error(`Unknown step type: ${stepType}`);
   }
 
   if (returnsAlias && typeof returnsAlias === "object") {

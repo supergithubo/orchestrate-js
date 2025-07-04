@@ -138,7 +138,6 @@ Below is an example workflow (see `index.js`) that:
 ```js
 [
   {
-    type: "series",
     command: "downloadVideos",
     params: {
       id: "rapidapi-tiktok",
@@ -161,25 +160,50 @@ Below is an example workflow (see `index.js`) that:
     commands: [
       {
         type: "series",
-        command: "extractFrames",
-        params: (context: any) => ({
-          id: "ffmpeg-frame",
-          services: { frameExtractor: "ffmpeg-frame" },
-          params: {
-            videoPath: context.videoPaths[0],
-            outputDir: path.resolve(__dirname, "../../tmp"),
-            frames: 5,
-            opts: {
-              ffmpegBin: config.app.ffmpegBin,
-              ffprobeBin: config.app.ffprobeBin,
-              cache: true,
-            },
+        commands: [
+          {
+            command: "extractFrames",
+            params: (context: any) => ({
+              id: "ffmpeg-frame",
+              services: { frameExtractor: "ffmpeg-frame" },
+              params: {
+                videoPath: context.videoPaths[0],
+                outputDir: path.resolve(__dirname, "../../tmp"),
+                frames: 5,
+                opts: {
+                  ffmpegBin: config.app.ffmpegBin,
+                  ffprobeBin: config.app.ffprobeBin,
+                  cache: true,
+                },
+              },
+            }),
+            returns: ["framePaths"],
           },
-        }),
-        returns: ["framePaths"],
+          {
+            command: "describeImages",
+            params: (context: any) => ({
+              id: "openai-vision-gpt-4o",
+              services: { vision: "openai-vision" },
+              params: {
+                images: context.framePaths,
+                opts: {
+                  apiKey: process.env.OPENAI_API_KEY,
+                  model: "gpt-4o",
+                  messages: [
+                    {
+                      role: "user",
+                      content:
+                        "You are an expert video content analyst. Analyze the video frames for content, context, and visual details.",
+                    },
+                  ],
+                },
+              },
+            }),
+            returnsAlias: { description: "frameAnalysis" },
+          },
+        ],
       },
       {
-        type: "series",
         command: "transcribeAudio",
         params: (context: any) => ({
           id: "openai-whisper",
@@ -198,37 +222,19 @@ Below is an example workflow (see `index.js`) that:
   },
   {
     type: "series",
-    command: "describeImages",
-    params: (context: any) => ({
-      id: "openai-vision-gpt-4o",
-      services: { vision: "openai-vision" },
-      params: {
-        images: context.framePaths,
-        opts: {
-          apiKey: process.env.OPENAI_API_KEY,
-          model: "gpt-4o",
-          messages: [
-            {
-              role: "user",
-              content:
-                "You are an expert video content analyst. Analyze the video frames for content, context, and visual details.",
-            },
-          ],
-        },
-      },
-    }),
-    returnsAlias: { description: "frameAnalysis" },
-  },
-  {
-    type: "series",
     command: "getResponse",
     params: (context: any) => ({
       id: "llm-gpt-4o-mini",
       services: { llm: "openai-response" },
       params: {
-        input: `Given the following video analysis, recommend a TikTok video idea: ${JSON.stringify(
-          context.frameAnalysis
-        )}`,
+        input: `Given the following: 
+        
+        Video analysis: ${JSON.stringify(context.frameAnalysis)}
+        
+        Transcription: ${JSON.stringify(context.transcription)}
+        
+        Recommend a TikTok video idea
+        `,
         opts: {
           apiKey: process.env.OPENAI_API_KEY,
           model: "gpt-4o-mini",
@@ -257,25 +263,6 @@ Below is an example workflow (see `index.js`) that:
 
 The following services are currently available in the `services/` directory:
 
-- **Downloaders**
-
-  - Image
-    - `http-download.service` — HTTP downloader
-  - Video
-    - `rapidapi-tiktok.service.js` — Download TikTok videos via RapidAPI
-
-- **Extractors**
-
-  - Frame
-    - `ffmpeg-frame.service.js` — Extract video frames using ffmpeg
-  - Transcription
-    - `openai-whisper.service.js` — Audio transcription using OpenAI Whisper
-
-- **Generators**
-
-  - Image
-    - `openai-image.service.js` — OpenAI Image generator
-
 - **LLMs**
 
   - `openai-completion.service.js` — OpenAI LLM using Completion
@@ -284,6 +271,31 @@ The following services are currently available in the `services/` directory:
 - **Vision Services**
 
   - `openai-vision.service.js` — Frame analysis using OpenAI Vision
+
+- **Generators**
+
+  - Image
+    - `openai-image.service.js` — OpenAI Image generator
+
+- **Extractors**
+
+  - Frame
+    - `ffmpeg-frame.service.js` — Extract video frames using ffmpeg
+  - Transcription
+    - `openai-whisper.service.js` — Audio transcription using OpenAI Whisper
+
+- **Converters**
+
+  - Image2Video
+    - `runway-ml.service` — RunwayML image-to-video generator
+
+- **Downloaders**
+
+  - Image
+    - `http-download.service` — HTTP downloader
+  - Video
+    - `http-download.service` — HTTP downloader
+    - `rapidapi-tiktok.service.js` — Download TikTok videos via RapidAPI
 
 - **Other Core Services**:
   - `logger.service.js` — Logging utilities

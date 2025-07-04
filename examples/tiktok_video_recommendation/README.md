@@ -32,9 +32,8 @@ This workflow is modular and can be adapted to other video platforms or extended
 ## Example Workflow Structure
 
 ```ts
-const workflow = [
+[
   {
-    type: "series",
     command: "downloadVideos",
     params: {
       id: "rapidapi-tiktok",
@@ -57,25 +56,50 @@ const workflow = [
     commands: [
       {
         type: "series",
-        command: "extractFrames",
-        params: (context: any) => ({
-          id: "ffmpeg-frame",
-          services: { frameExtractor: "ffmpeg-frame" },
-          params: {
-            videoPath: context.videoPaths[0],
-            outputDir: path.resolve(__dirname, "../../tmp"),
-            frames: 5,
-            opts: {
-              ffmpegBin: config.app.ffmpegBin,
-              ffprobeBin: config.app.ffprobeBin,
-              cache: true,
-            },
+        commands: [
+          {
+            command: "extractFrames",
+            params: (context: any) => ({
+              id: "ffmpeg-frame",
+              services: { frameExtractor: "ffmpeg-frame" },
+              params: {
+                videoPath: context.videoPaths[0],
+                outputDir: path.resolve(__dirname, "../../tmp"),
+                frames: 5,
+                opts: {
+                  ffmpegBin: config.app.ffmpegBin,
+                  ffprobeBin: config.app.ffprobeBin,
+                  cache: true,
+                },
+              },
+            }),
+            returns: ["framePaths"],
           },
-        }),
-        returns: ["framePaths"],
+          {
+            command: "describeImages",
+            params: (context: any) => ({
+              id: "openai-vision-gpt-4o",
+              services: { vision: "openai-vision" },
+              params: {
+                images: context.framePaths,
+                opts: {
+                  apiKey: process.env.OPENAI_API_KEY,
+                  model: "gpt-4o",
+                  messages: [
+                    {
+                      role: "user",
+                      content:
+                        "You are an expert video content analyst. Analyze the video frames for content, context, and visual details.",
+                    },
+                  ],
+                },
+              },
+            }),
+            returnsAlias: { description: "frameAnalysis" },
+          },
+        ],
       },
       {
-        type: "series",
         command: "transcribeAudio",
         params: (context: any) => ({
           id: "openai-whisper",
@@ -94,37 +118,19 @@ const workflow = [
   },
   {
     type: "series",
-    command: "describeImages",
-    params: (context: any) => ({
-      id: "openai-vision-gpt-4o",
-      services: { vision: "openai-vision" },
-      params: {
-        images: context.framePaths,
-        opts: {
-          apiKey: process.env.OPENAI_API_KEY,
-          model: "gpt-4o",
-          messages: [
-            {
-              role: "user",
-              content:
-                "You are an expert video content analyst. Analyze the video frames for content, context, and visual details.",
-            },
-          ],
-        },
-      },
-    }),
-    returnsAlias: { description: "frameAnalysis" },
-  },
-  {
-    type: "series",
     command: "getResponse",
     params: (context: any) => ({
       id: "llm-gpt-4o-mini",
       services: { llm: "openai-response" },
       params: {
-        input: `Given the following video analysis, recommend a TikTok video idea: ${JSON.stringify(
-          context.frameAnalysis
-        )}`,
+        input: `Given the following: 
+        
+        Video analysis: ${JSON.stringify(context.frameAnalysis)}
+        
+        Transcription: ${JSON.stringify(context.transcription)}
+        
+        Recommend a TikTok video idea
+        `,
         opts: {
           apiKey: process.env.OPENAI_API_KEY,
           model: "gpt-4o-mini",
